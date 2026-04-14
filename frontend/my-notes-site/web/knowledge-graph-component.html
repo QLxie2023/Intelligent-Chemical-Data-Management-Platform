@@ -1,0 +1,545 @@
+<!-- 知识图谱组件 - 可直接嵌入任何项目 -->
+<!-- 使用方法：在你的页面中包含这个文件，然后添加 <div id="knowledge-graph-container"></div> -->
+
+<style>
+    #knowledge-graph-container {
+        width: 100%;
+        height: 100%;
+        min-height: 600px;
+        display: flex;
+        gap: 20px;
+    }
+    
+    #knowledge-graph-container .kg-sidebar {
+        width: 300px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    #knowledge-graph-container .kg-sidebar h2 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1.3em;
+    }
+    
+    #knowledge-graph-container .kg-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    #knowledge-graph-container .kg-stat-item {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    
+    #knowledge-graph-container .kg-stat-item .number {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    #knowledge-graph-container .kg-stat-item .label {
+        font-size: 0.85em;
+        color: #666;
+        margin-top: 5px;
+    }
+    
+    #knowledge-graph-container .kg-search-box {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 1em;
+    }
+    
+    #knowledge-graph-container .kg-search-box:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    #knowledge-graph-container .kg-node-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    #knowledge-graph-container .kg-node-item {
+        padding: 8px;
+        margin: 5px 0;
+        background: #f9f9f9;
+        cursor: pointer;
+        border-radius: 3px;
+        transition: all 0.3s;
+    }
+    
+    #knowledge-graph-container .kg-node-item:hover {
+        background: #efefef;
+        transform: translateX(5px);
+    }
+    
+    #knowledge-graph-container .kg-node-item .name {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    #knowledge-graph-container .kg-node-item .type {
+        font-size: 0.8em;
+        color: #999;
+        margin-top: 3px;
+    }
+    
+    #knowledge-graph-container .kg-canvas-area {
+        flex: 1;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    #knowledge-graph-container #kg-graph-canvas {
+        width: 100%;
+        height: 100%;
+    }
+    
+    #knowledge-graph-container .kg-tooltip {
+        position: absolute;
+        padding: 10px 15px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        border-radius: 5px;
+        font-size: 0.9em;
+        pointer-events: none;
+        max-width: 250px;
+        z-index: 1000;
+        display: none;
+    }
+    
+    #knowledge-graph-container .kg-tooltip .title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    #knowledge-graph-container .kg-info-panel {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        max-width: 250px;
+        display: none;
+        z-index: 999;
+    }
+    
+    #knowledge-graph-container .kg-info-panel h3 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1.1em;
+    }
+    
+    #knowledge-graph-container .kg-info-panel .info-item {
+        padding: 5px 0;
+        font-size: 0.9em;
+        color: #666;
+        border-bottom: 1px solid #eee;
+    }
+    
+    #knowledge-graph-container .kg-info-panel .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    #knowledge-graph-container .kg-legend {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        font-size: 0.85em;
+    }
+    
+    #knowledge-graph-container .kg-legend-item {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+    }
+    
+    #knowledge-graph-container .kg-legend-color {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    
+    #knowledge-graph-container .kg-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        font-size: 1.2em;
+        color: #666;
+    }
+</style>
+
+<div id="knowledge-graph-container">
+    <aside class="kg-sidebar">
+        <h2>Statistics</h2>
+        <div class="kg-stats">
+            <div class="kg-stat-item">
+                <div class="number" id="kg-totalNodes">0</div>
+                <div class="label">Nodes</div>
+            </div>
+            <div class="kg-stat-item">
+                <div class="number" id="kg-totalLinks">0</div>
+                <div class="label">Relations</div>
+            </div>
+            <div class="kg-stat-item">
+                <div class="number" id="kg-totalElements">0</div>
+                <div class="label">Elements</div>
+            </div>
+            <div class="kg-stat-item">
+                <div class="number" id="kg-totalCompounds">0</div>
+                <div class="label">Compounds</div>
+            </div>
+        </div>
+        
+        <h2>Search</h2>
+        <input type="text" id="kg-searchBox" class="kg-search-box" placeholder="Search elements or compounds...">
+        
+        <h2>Nodes</h2>
+        <div class="kg-node-list" id="kg-nodeList"></div>
+    </aside>
+    
+    <main class="kg-canvas-area">
+        <div class="kg-loading" id="kg-loading">
+            <span>Loading knowledge graph...</span>
+        </div>
+        <svg id="kg-graph-canvas"></svg>
+        
+        <div class="kg-legend">
+            <div class="kg-legend-item">
+                <div class="kg-legend-color" style="background: #ff6b6b;"></div>
+                <span>Element</span>
+            </div>
+            <div class="kg-legend-item">
+                <div class="kg-legend-color" style="background: #ffa502;"></div>
+                <span>Compound</span>
+            </div>
+            <div class="kg-legend-item">
+                <div class="kg-legend-color" style="background: #4ecdc4;"></div>
+                <span>Classification</span>
+            </div>
+        </div>
+        
+        <div class="kg-info-panel" id="kg-infoPanel"></div>
+        <div class="kg-tooltip" id="kg-tooltip"></div>
+    </main>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+(function() {
+    let simulation = null;
+    let graph = null;
+    let svg = null;
+    let g = null;
+    
+    const colorMap = {
+        'element': '#ff6b6b',
+        'compound': '#ffa502',
+        'group': '#4ecdc4'
+    };
+    
+    // 可配置的数据URL
+    window.KnowledgeGraphConfig = window.KnowledgeGraphConfig || {
+        dataUrl: './output/knowledge_graph.json'
+    };
+    
+    // Load knowledge graph data
+    async function loadGraph() {
+        try {
+            const paths = [
+                window.KnowledgeGraphConfig.dataUrl,
+                './output/knowledge_graph.json',
+                '../output/knowledge_graph.json',
+                '/output/knowledge_graph.json',
+                'output/knowledge_graph.json'
+            ];
+            
+            let response;
+            let success = false;
+            let lastError;
+            
+            for (const path of paths) {
+                try {
+                    response = await fetch(path);
+                    if (response.ok) {
+                        success = true;
+                        console.log(`Loaded from ${path}`);
+                        break;
+                    }
+                } catch (e) {
+                    lastError = e;
+                    continue;
+                }
+            }
+            
+            if (!success) {
+                throw new Error(`Failed to load data file from any path. Error: ${lastError}`);
+            }
+            
+            graph = await response.json();
+            initVisualization();
+        } catch (error) {
+            console.error('Failed to load graph:', error);
+            document.getElementById('kg-loading').innerHTML = 'Load Failed - Please check data file path';
+        }
+    }
+    
+    function initVisualization() {
+        updateStats();
+        createSVG();
+        createGraph();
+        updateNodeList();
+        document.getElementById('kg-loading').style.display = 'none';
+    }
+    
+    function updateStats() {
+        document.getElementById('kg-totalNodes').textContent = graph.nodes.length;
+        document.getElementById('kg-totalLinks').textContent = graph.links.length;
+        document.getElementById('kg-totalElements').textContent = 
+            graph.nodes.filter(n => n.type === 'element').length;
+        document.getElementById('kg-totalCompounds').textContent = 
+            graph.nodes.filter(n => n.type === 'compound').length;
+    }
+    
+    function createSVG() {
+        const container = document.getElementById('kg-graph-canvas').parentElement;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        svg = d3.select('#kg-graph-canvas')
+            .attr('width', width)
+            .attr('height', height);
+        
+        svg.selectAll('*').remove();
+        
+        svg.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('fill', 'white');
+        
+        g = svg.append('g');
+        
+        const zoom = d3.zoom().on('zoom', (event) => {
+            g.attr('transform', event.transform);
+        });
+        svg.call(zoom);
+    }
+    
+    function createGraph() {
+        const width = svg.attr('width');
+        const height = svg.attr('height');
+        
+        simulation = d3.forceSimulation(graph.nodes)
+            .force('link', d3.forceLink(graph.links)
+                .id(d => d.id)
+                .distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(30));
+        
+        const links = g.selectAll('line')
+            .data(graph.links)
+            .enter()
+            .append('line')
+            .attr('stroke', '#999')
+            .attr('stroke-opacity', 0.6)
+            .attr('stroke-width', 1.5);
+        
+        const nodes = g.selectAll('circle')
+            .data(graph.nodes)
+            .enter()
+            .append('circle')
+            .attr('r', d => d.type === 'element' ? 12 : (d.type === 'compound' ? 10 : 8))
+            .attr('fill', d => colorMap[d.type])
+            .attr('stroke', 'white')
+            .attr('stroke-width', 2)
+            .style('cursor', 'pointer')
+            .call(drag(simulation));
+        
+        const labels = g.selectAll('text')
+            .data(graph.nodes)
+            .enter()
+            .append('text')
+            .attr('dy', 4)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', d => d.type === 'element' ? '10px' : '8px')
+            .attr('font-weight', d => d.type === 'element' ? 'bold' : 'normal')
+            .attr('fill', 'white')
+            .text(d => {
+                if (d.info && d.info.symbol) {
+                    return d.info.symbol;
+                }
+                return d.title.substring(0, 2);
+            });
+        
+        nodes.on('mouseover', (event, d) => {
+            showTooltip(event, d);
+            highlightNode(nodes, links, labels, d);
+        })
+        .on('mouseout', () => {
+            hideTooltip();
+            resetHighlight(nodes, links, labels);
+        })
+        .on('click', (event, d) => {
+            showInfoPanel(d);
+        });
+        
+        simulation.on('tick', () => {
+            links
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+            
+            nodes
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+            
+            labels
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+        });
+    }
+    
+    function drag(simulation) {
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        return d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended);
+    }
+    
+    function showTooltip(event, d) {
+        const tooltip = document.getElementById('kg-tooltip');
+        tooltip.innerHTML = `
+            <div class="title">${d.title}</div>
+            <div>Type: ${typeLabel(d.type)}</div>
+            ${d.info && d.info.symbol ? `<div>Symbol: ${d.info.symbol}</div>` : ''}
+            ${d.info && d.info.atomic_number ? `<div>Atomic #: ${d.info.atomic_number}</div>` : ''}
+        `;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (event.pageX + 10) + 'px';
+        tooltip.style.top = (event.pageY + 10) + 'px';
+    }
+    
+    function hideTooltip() {
+        document.getElementById('kg-tooltip').style.display = 'none';
+    }
+    
+    function highlightNode(nodes, links, labels, d) {
+        nodes.style('opacity', n => n === d ? 1 : 0.3);
+        links.style('opacity', l => l.source === d || l.target === d ? 1 : 0.1);
+        labels.style('opacity', n => n === d ? 1 : 0.3);
+    }
+    
+    function resetHighlight(nodes, links, labels) {
+        nodes.style('opacity', 1);
+        links.style('opacity', 0.6);
+        labels.style('opacity', 1);
+    }
+    
+    function showInfoPanel(d) {
+        const panel = document.getElementById('kg-infoPanel');
+        panel.innerHTML = `
+            <h3>${d.title}</h3>
+            <div class="info-item">Type: ${typeLabel(d.type)}</div>
+            ${d.info && d.info.symbol ? `<div class="info-item">Symbol: ${d.info.symbol}</div>` : ''}
+            ${d.info && d.info.atomic_number ? `<div class="info-item">Atomic #: ${d.info.atomic_number}</div>` : ''}
+            <div class="info-item">Relations: ${graph.links.filter(l => l.source.id === d.id || l.target.id === d.id).length}</div>
+        `;
+        panel.style.display = 'block';
+    }
+    
+    function typeLabel(type) {
+        const labels = {
+            'element': 'Element',
+            'compound': 'Compound',
+            'group': 'Classification'
+        };
+        return labels[type] || type;
+    }
+    
+    function updateNodeList() {
+        const nodeList = document.getElementById('kg-nodeList');
+        const elements = graph.nodes.filter(n => n.type === 'element').sort((a, b) => a.title.localeCompare(b.title));
+        
+        nodeList.innerHTML = elements.map(node => `
+            <div class="kg-node-item ${node.type}" onclick="window.searchAndHighlight('${node.title}')">
+                <div class="name">${node.title}</div>
+                <div class="type">${node.info && node.info.symbol ? node.info.symbol : ''}</div>
+            </div>
+        `).join('');
+    }
+    
+    window.searchAndHighlight = function(query) {
+        const nodes = g.selectAll('circle');
+        const labels = g.selectAll('text');
+        const links = g.selectAll('line');
+        
+        const results = graph.nodes.filter(n => 
+            n.title.toLowerCase().includes(query.toLowerCase()) ||
+            (n.info && n.info.symbol && n.info.symbol.toLowerCase().includes(query.toLowerCase()))
+        );
+        
+        if (results.length > 0) {
+            highlightNode(nodes, links, labels, results[0]);
+        }
+    };
+    
+    document.getElementById('kg-searchBox').addEventListener('input', (e) => {
+        window.searchAndHighlight(e.target.value);
+    });
+    
+    // 自动加载
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadGraph);
+    } else {
+        loadGraph();
+    }
+    
+    window.addEventListener('resize', () => {
+        if (graph) {
+            createSVG();
+            createGraph();
+        }
+    });
+})();
+</script>

@@ -1,0 +1,1484 @@
+{
+  "nodes": [
+    {
+      "id": "Ammonia",
+      "title": "氨 (Ammonia)",
+      "file": "elements\\Ammonia.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Argon",
+      "title": "氩 (Argon)",
+      "file": "elements\\Argon.md",
+      "info": {
+        "symbol": "Ar",
+        "atomic_number": 18,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Bromine",
+      "title": "溴 (Bromine)",
+      "file": "elements\\Bromine.md",
+      "info": {
+        "symbol": "Br",
+        "atomic_number": 35,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Calcium",
+      "title": "钙 (Calcium)",
+      "file": "elements\\Calcium.md",
+      "info": {
+        "symbol": "Ca",
+        "atomic_number": 20,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Carbon",
+      "title": "碳 (Carbon)",
+      "file": "elements\\Carbon.md",
+      "info": {
+        "symbol": "C",
+        "atomic_number": 6,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "CarbonDioxide",
+      "title": "二氧化碳 (Carbon Dioxide)",
+      "file": "elements\\CarbonDioxide.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Chlorine",
+      "title": "氯 (Chlorine)",
+      "file": "elements\\Chlorine.md",
+      "info": {
+        "symbol": "Cl",
+        "atomic_number": 17,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Copper",
+      "title": "铜 (Copper)",
+      "file": "elements\\Copper.md",
+      "info": {
+        "symbol": "Cu",
+        "atomic_number": 29,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Fluorine",
+      "title": "氟 (Fluorine)",
+      "file": "elements\\Fluorine.md",
+      "info": {
+        "symbol": "F",
+        "atomic_number": 9,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Gold",
+      "title": "金 (Gold)",
+      "file": "elements\\Gold.md",
+      "info": {
+        "symbol": "Au",
+        "atomic_number": 79,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Helium",
+      "title": "氦 (Helium)",
+      "file": "elements\\Helium.md",
+      "info": {
+        "symbol": "He",
+        "atomic_number": 2,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Hydrogen",
+      "title": "氢 (Hydrogen)",
+      "file": "elements\\Hydrogen.md",
+      "info": {
+        "symbol": "H",
+        "atomic_number": 1,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "HydrogenChloride",
+      "title": "氯化氢 (Hydrogen Chloride)",
+      "file": "elements\\HydrogenChloride.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Iodine",
+      "title": "碘 (Iodine)",
+      "file": "elements\\Iodine.md",
+      "info": {
+        "symbol": "I",
+        "atomic_number": 53,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Iron",
+      "title": "铁 (Iron)",
+      "file": "elements\\Iron.md",
+      "info": {
+        "symbol": "Fe",
+        "atomic_number": 26,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "IronOxides",
+      "title": "氧化铁 (Iron Oxides)",
+      "file": "elements\\IronOxides.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Lithium",
+      "title": "锂 (Lithium)",
+      "file": "elements\\Lithium.md",
+      "info": {
+        "symbol": "Li",
+        "atomic_number": 3,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "MethaneCH4",
+      "title": "甲烷 (Methane)",
+      "file": "elements\\MethaneCH4.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Neon",
+      "title": "氖 (Neon)",
+      "file": "elements\\Neon.md",
+      "info": {
+        "symbol": "Ne",
+        "atomic_number": 10,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "NitricAcid",
+      "title": "硝酸 (Nitric Acid)",
+      "file": "elements\\NitricAcid.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Nitrogen",
+      "title": "氮 (Nitrogen)",
+      "file": "elements\\Nitrogen.md",
+      "info": {
+        "symbol": "N",
+        "atomic_number": 7,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Oxygen",
+      "title": "氧 (Oxygen)",
+      "file": "elements\\Oxygen.md",
+      "info": {
+        "symbol": "O",
+        "atomic_number": 8,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Phosphorus",
+      "title": "磷 (Phosphorus)",
+      "file": "elements\\Phosphorus.md",
+      "info": {
+        "symbol": "P",
+        "atomic_number": 15,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Silver",
+      "title": "银 (Silver)",
+      "file": "elements\\Silver.md",
+      "info": {
+        "symbol": "Ag",
+        "atomic_number": 47,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Sodium",
+      "title": "钠 (Sodium)",
+      "file": "elements\\Sodium.md",
+      "info": {
+        "symbol": "Na",
+        "atomic_number": 11,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "SodiumChloride",
+      "title": "氯化钠 (Sodium Chloride)",
+      "file": "elements\\SodiumChloride.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Sulfur",
+      "title": "硫 (Sulfur)",
+      "file": "elements\\Sulfur.md",
+      "info": {
+        "symbol": "S",
+        "atomic_number": 16,
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "SulfuricAcid",
+      "title": "硫酸 (Sulfuric Acid)",
+      "file": "elements\\SulfuricAcid.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "Water",
+      "title": "水 (Water)",
+      "file": "elements\\Water.md",
+      "info": {
+        "classification": []
+      },
+      "type": "element"
+    },
+    {
+      "id": "AlkaliMetals",
+      "title": "碱金属 (Alkali Metals)",
+      "file": "groups\\AlkaliMetals.md",
+      "info": {
+        "classification": []
+      },
+      "type": "group"
+    },
+    {
+      "id": "HaloGens",
+      "title": "卤素 (Halogens)",
+      "file": "groups\\HaloGens.md",
+      "info": {
+        "classification": []
+      },
+      "type": "group"
+    },
+    {
+      "id": "Metals",
+      "title": "金属元素 (Metals)",
+      "file": "groups\\Metals.md",
+      "info": {
+        "classification": []
+      },
+      "type": "group"
+    },
+    {
+      "id": "NobleGases",
+      "title": "稀有气体 (Noble Gases)",
+      "file": "groups\\NobleGases.md",
+      "info": {
+        "classification": []
+      },
+      "type": "group"
+    },
+    {
+      "id": "NonMetals",
+      "title": "非金属元素 (Non-Metals)",
+      "file": "groups\\NonMetals.md",
+      "info": {
+        "classification": []
+      },
+      "type": "group"
+    },
+    {
+      "id": "TransitionMetals",
+      "title": "过渡金属 (Transition Metals)",
+      "file": "groups\\TransitionMetals.md",
+      "info": {
+        "classification": []
+      },
+      "type": "group"
+    }
+  ],
+  "links": [
+    {
+      "source": "Ammonia",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "NitricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "Ammonia",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Argon",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Argon",
+      "target": "NobleGases",
+      "type": "reference"
+    },
+    {
+      "source": "Bromine",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Bromine",
+      "target": "HaloGens",
+      "type": "reference"
+    },
+    {
+      "source": "Bromine",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Bromine",
+      "target": "Iodine",
+      "type": "reference"
+    },
+    {
+      "source": "Calcium",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Calcium",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Calcium",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Calcium",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "MethaneCH4",
+      "type": "reference"
+    },
+    {
+      "source": "Carbon",
+      "target": "SulfuricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "CarbonDioxide",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "HaloGens",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "HydrogenChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "SodiumChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "HydrogenChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Chlorine",
+      "target": "SodiumChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Copper",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Copper",
+      "target": "TransitionMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Copper",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Copper",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "Fluorine",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Fluorine",
+      "target": "HaloGens",
+      "type": "reference"
+    },
+    {
+      "source": "Fluorine",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Gold",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Gold",
+      "target": "TransitionMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Helium",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Helium",
+      "target": "NobleGases",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "HydrogenChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "HydrogenChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Hydrogen",
+      "target": "MethaneCH4",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "HydrogenChloride",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Iodine",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Iodine",
+      "target": "HaloGens",
+      "type": "reference"
+    },
+    {
+      "source": "Iodine",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "TransitionMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "IronOxides",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "Iron",
+      "target": "IronOxides",
+      "type": "reference"
+    },
+    {
+      "source": "IronOxides",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "IronOxides",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "IronOxides",
+      "target": "Iron",
+      "type": "reference"
+    },
+    {
+      "source": "IronOxides",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Lithium",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Lithium",
+      "target": "AlkaliMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Lithium",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Lithium",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "MethaneCH4",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Neon",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Neon",
+      "target": "NobleGases",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "NitricAcid",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "SulfuricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "Nitrogen",
+      "target": "NitricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "Fluorine",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "SulfuricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "Oxygen",
+      "target": "NitricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "Phosphorus",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Phosphorus",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Phosphorus",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Silver",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Silver",
+      "target": "TransitionMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Silver",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Silver",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "Silver",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "AlkaliMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "SodiumChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Sodium",
+      "target": "SodiumChloride",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "SodiumChloride",
+      "target": "HydrogenChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Sulfur",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Sulfur",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Sulfur",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Sulfur",
+      "target": "SulfuricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "Sulfur",
+      "target": "Iron",
+      "type": "reference"
+    },
+    {
+      "source": "Sulfur",
+      "target": "SulfuricAcid",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "SulfuricAcid",
+      "target": "Water",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "HydrogenChloride",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Ammonia",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "CarbonDioxide",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "Water",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "AlkaliMetals",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "AlkaliMetals",
+      "target": "Lithium",
+      "type": "reference"
+    },
+    {
+      "source": "AlkaliMetals",
+      "target": "Metals",
+      "type": "reference"
+    },
+    {
+      "source": "AlkaliMetals",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "AlkaliMetals",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "HaloGens",
+      "target": "Fluorine",
+      "type": "reference"
+    },
+    {
+      "source": "HaloGens",
+      "target": "Chlorine",
+      "type": "reference"
+    },
+    {
+      "source": "HaloGens",
+      "target": "Bromine",
+      "type": "reference"
+    },
+    {
+      "source": "HaloGens",
+      "target": "Iodine",
+      "type": "reference"
+    },
+    {
+      "source": "HaloGens",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "Iron",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "Copper",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "Gold",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "Sodium",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "Calcium",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "AlkaliMetals",
+      "type": "reference"
+    },
+    {
+      "source": "Metals",
+      "target": "TransitionMetals",
+      "type": "reference"
+    },
+    {
+      "source": "NobleGases",
+      "target": "Helium",
+      "type": "reference"
+    },
+    {
+      "source": "NobleGases",
+      "target": "Neon",
+      "type": "reference"
+    },
+    {
+      "source": "NobleGases",
+      "target": "Argon",
+      "type": "reference"
+    },
+    {
+      "source": "NobleGases",
+      "target": "NonMetals",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "Hydrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "Carbon",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "Nitrogen",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "Oxygen",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "Sulfur",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "Phosphorus",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "HaloGens",
+      "type": "reference"
+    },
+    {
+      "source": "NonMetals",
+      "target": "NobleGases",
+      "type": "reference"
+    },
+    {
+      "source": "TransitionMetals",
+      "target": "Iron",
+      "type": "reference"
+    },
+    {
+      "source": "TransitionMetals",
+      "target": "Copper",
+      "type": "reference"
+    },
+    {
+      "source": "TransitionMetals",
+      "target": "Gold",
+      "type": "reference"
+    },
+    {
+      "source": "TransitionMetals",
+      "target": "Silver",
+      "type": "reference"
+    },
+    {
+      "source": "TransitionMetals",
+      "target": "Metals",
+      "type": "reference"
+    }
+  ],
+  "metadata": {
+    "total_nodes": 35,
+    "total_links": 223,
+    "types": {
+      "element": 29,
+      "group": 6
+    }
+  }
+}

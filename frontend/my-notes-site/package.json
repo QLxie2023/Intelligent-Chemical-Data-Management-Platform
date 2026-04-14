@@ -1,0 +1,33 @@
+{
+  "name": "general-chemistry-vault",
+  "version": "1.0.0",
+  "description": "General Chemistry Obsidian Vault Repository - 化学元素知识图谱",
+  "main": "scripts/server.py",
+  "scripts": {
+    "generate": "python scripts/parse_markdown.py vault output/knowledge_graph.json",
+    "start": "python scripts/server.py",
+    "serve": "python scripts/server.py",
+    "build": "python scripts/parse_markdown.py vault output/knowledge_graph.json && echo 'Build complete!'"
+  },
+  "keywords": [
+    "chemistry",
+    "obsidian",
+    "knowledge-graph",
+    "elements",
+    "interactive",
+    "visualization",
+    "d3.js",
+    "educational"
+  ],
+  "author": "Chemistry Education Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/general-chemistry-vault"
+  },
+  "engines": {
+    "python": ">=3.6"
+  },
+  "devDependencies": {}
+}
+

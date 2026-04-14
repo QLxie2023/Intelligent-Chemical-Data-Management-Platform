@@ -1,0 +1,24 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+class LoginComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    + Object form {username, password} // Login form data
+    + String errorMsg // Error message
+    
+    ' Methods / Logic Functions
+    + handleLogin() // Handle login process
+}
+
+' Dependencies
+class RequestService <<Utility>>
+class Router <<Dependency>>
+class LocalStorage <<System>>
+
+' Relationships
+LoginComponent ..> RequestService : calls /auth/login
+LoginComponent ..> Router : redirect on success
+LoginComponent ..> LocalStorage : store token
+
+@enduml

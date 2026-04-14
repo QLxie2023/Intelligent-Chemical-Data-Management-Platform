@@ -1,0 +1,37 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+' Component Class Definition
+class HomeComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    + List<Project> projects // Project list
+    + Boolean loading // Loading state
+    + Boolean showCreateModal // Controls create modal visibility
+    + Object newProject // Project form data
+    + File selectedFile
+    + Image selectedImage
+    + String errorMsg // Error message
+    + String fileUploadMsg // File upload message
+    
+    ' Methods / Logic Functions
+    + fetchProjects() // Fetch project list
+    + createProject() // Create project (handles file/image upload)
+    + uploadFile(projectId, file) // Upload file
+    + uploadImage(projectId, image) // Upload image
+    + resetFormAndFiles() // Reset form and selected files
+    + openProjectDetail(id) // Navigate to detail view
+    + logout() // Handle logout
+}
+
+' Dependencies
+class RequestService <<Utility>>
+class Router <<Dependency>>
+class LocalStorage <<System>>
+
+' Relationships
+HomeComponent ..> RequestService : calls API
+HomeComponent ..> Router : navigation
+HomeComponent ..> LocalStorage : token management
+
+@enduml

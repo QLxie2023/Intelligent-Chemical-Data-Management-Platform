@@ -1,0 +1,27 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+class SearchComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    + String keyword // Search keyword
+    + List<Project> results // Search results list
+    + Boolean loading // Loading state
+    
+    ' Methods / Logic Functions
+    + performSearch() // Execute search API call
+    + openProject(id) // Navigate to project detail
+    + logout() // Handle logout
+}
+
+' Dependencies
+class RequestService <<Utility>>
+class Router <<Dependency>>
+class LocalStorage <<System>>
+
+' Relationships
+SearchComponent ..> RequestService : calls /projects/search
+SearchComponent ..> Router : navigation
+SearchComponent ..> LocalStorage : token management
+
+@endumll

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Elements Knowledge Graph - Interactive Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px 40px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .sidebar h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .stat-item .number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-item .label {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .node-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .node-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        
+        .node-item:hover {
+            background: #efefef;
+            transform: translateX(5px);
+        }
+        
+
+        
+
+        
+
+        
+        .node-item .name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .node-item .type {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        .canvas-area {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #graph-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .tooltip {
+            position: absolute;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 5px;
+            font-size: 0.9em;
+            pointer-events: none;
+            max-width: 250px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .tooltip .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .info-panel {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: 250px;
+            display: none;
+            z-index: 999;
+        }
+        
+        .info-panel h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .info-panel .info-item {
+            padding: 5px 0;
+            font-size: 0.9em;
+            color: #666;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-panel .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        
+        .controls button {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+        
+        .controls button:hover {
+            background: #764ba2;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 0.85em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        @media (max-width: 1000px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Chemistry Elements Knowledge Graph</h1>
+        <p>Interactive Knowledge Graph of Chemical Elements and Compounds</p>
+    </header>
+    
+    <div class="container">
+        <aside class="sidebar">
+            <h2> Statistics</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="number" id="totalNodes">0</div>
+                    <div class="label">Nodes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="totalLinks">0</div>
+                    <div class="label">Relations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="totalElements">0</div>
+                    <div class="label">Elements</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="totalCompounds">0</div>
+                    <div class="label">Compounds</div>
+                </div>
+            </div>
+            
+            <h2>Search</h2>
+            <input type="text" id="searchBox" class="search-box" placeholder="Search elements or compounds...">
+            
+            <h2>Nodes</h2>
+            <div class="node-list" id="nodeList"></div>
+        </aside>
+        
+        <main class="canvas-area">
+            <div class="loading" id="loading">
+                <span>Loading knowledge graph...</span>
+            </div>
+            <svg id="graph-canvas"></svg>
+            
+
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>Element</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffa502;"></div>
+                    <span>Compound</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Classification</span>
+                </div>
+            </div>
+            
+            <div class="info-panel" id="infoPanel"></div>
+            <div class="tooltip" id="tooltip"></div>
+        </main>
+    </div>
+    
+    <script>
+        let simulation = null;
+        let graph = null;
+        let svg = null;
+        let g = null;
+
+        
+        const colorMap = {
+            'element': '#ff6b6b',
+            'compound': '#ffa502',
+            'group': '#4ecdc4'
+        };
+
+        // English names for common element symbols
+        const elementEnglishNames = {
+            'H': 'Hydrogen', 'He': 'Helium', 'Li': 'Lithium', 'Be': 'Beryllium', 'B': 'Boron', 'C': 'Carbon', 'N': 'Nitrogen', 'O': 'Oxygen', 'F': 'Fluorine', 'Ne': 'Neon',
+            'Na': 'Sodium', 'Mg': 'Magnesium', 'Al': 'Aluminium', 'Si': 'Silicon', 'P': 'Phosphorus', 'S': 'Sulfur', 'Cl': 'Chlorine', 'Ar': 'Argon',
+            'K': 'Potassium', 'Ca': 'Calcium', 'Sc': 'Scandium', 'Ti': 'Titanium', 'V': 'Vanadium', 'Cr': 'Chromium', 'Mn': 'Manganese', 'Fe': 'Iron', 'Co': 'Cobalt', 'Ni': 'Nickel', 'Cu': 'Copper', 'Zn': 'Zinc',
+            'Ga': 'Gallium', 'Ge': 'Germanium', 'As': 'Arsenic', 'Se': 'Selenium', 'Br': 'Bromine', 'Kr': 'Krypton',
+            'Rb': 'Rubidium', 'Sr': 'Strontium', 'Y': 'Yttrium', 'Zr': 'Zirconium', 'Nb': 'Niobium', 'Mo': 'Molybdenum', 'Tc': 'Technetium', 'Ru': 'Ruthenium', 'Rh': 'Rhodium', 'Pd': 'Palladium', 'Ag': 'Silver', 'Cd': 'Cadmium',
+            'In': 'Indium', 'Sn': 'Tin', 'Sb': 'Antimony', 'Te': 'Tellurium', 'I': 'Iodine', 'Xe': 'Xenon',
+            'Cs': 'Cesium', 'Ba': 'Barium', 'La': 'Lanthanum', 'Ce': 'Cerium', 'Pr': 'Praseodymium', 'Nd': 'Neodymium', 'Pm': 'Promethium', 'Sm': 'Samarium', 'Eu': 'Europium', 'Gd': 'Gadolinium', 'Tb': 'Terbium', 'Dy': 'Dysprosium', 'Ho': 'Holmium', 'Er': 'Erbium', 'Tm': 'Thulium', 'Yb': 'Ytterbium', 'Lu': 'Lutetium',
+            'Hf': 'Hafnium', 'Ta': 'Tantalum', 'W': 'Tungsten', 'Re': 'Rhenium', 'Os': 'Osmium', 'Ir': 'Iridium', 'Pt': 'Platinum', 'Au': 'Gold', 'Hg': 'Mercury',
+            'Tl': 'Thallium', 'Pb': 'Lead', 'Bi': 'Bismuth', 'Po': 'Polonium', 'At': 'Astatine', 'Rn': 'Radon'
+        };
+
+        function displayTitle(d) {
+            // Prefer English name for elements via symbol mapping
+            if (d.type === 'element' && d.info && d.info.symbol) {
+                const symbol = d.info.symbol;
+                const name = elementEnglishNames[symbol];
+                if (name) return name;
+                return symbol;
+            }
+            // For others, prefer ASCII-only fallback
+            if (d.title) {
+                // If title contains non-ASCII, fallback to id
+                if (/[^\x00-\x7F]/.test(d.title)) {
+                    return d.id || d.title;
+                }
+                return d.title;
+            }
+            return d.id || '';
+        }
+        
+        // Load knowledge graph data
+        async function loadGraph() {
+            try {
+                // Try multiple possible paths
+                const paths = [
+                    './output/knowledge_graph.json',
+                    '../output/knowledge_graph.json',
+                    '/output/knowledge_graph.json',
+                    'output/knowledge_graph.json'
+                ];
+                
+                let response;
+                let success = false;
+                let lastError;
+                
+                for (const path of paths) {
+                    try {
+                        response = await fetch(path);
+                        if (response.ok) {
+                            success = true;
+                            console.log(`Loaded from ${path}`);
+                            break;
+                        }
+                    } catch (e) {
+                        lastError = e;
+                        continue;
+                    }
+                }
+                
+                if (!success) {
+                    throw new Error(`Failed to load data file from any path. Error: ${lastError}`);
+                }
+                
+                graph = await response.json();
+                initVisualization();
+            } catch (error) {
+                console.error('Failed to load graph:', error);
+                const msg = `
+                    Load Failed<br>
+                    <small>
+                    Solution:<br>
+                    1. Run: <code>python start.py</code><br>
+                    or<br>
+                    2. Run: <code>python scripts/parse_markdown.py vault output/knowledge_graph.json</code><br>
+                    3. Copy output/knowledge_graph.json to web/output/ directory
+                    </small>
+                `;
+                document.getElementById('loading').innerHTML = msg;
+            }
+        }
+        
+        // Initialize visualization
+        function initVisualization() {
+            // Update statistics
+            updateStats();
+            
+            // Create SVG and graph
+            createSVG();
+            createGraph();
+            updateNodeList();
+            
+            // Hide loading message
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalNodes').textContent = graph.nodes.length;
+            document.getElementById('totalLinks').textContent = graph.links.length;
+            document.getElementById('totalElements').textContent = 
+                graph.nodes.filter(n => n.type === 'element').length;
+            document.getElementById('totalCompounds').textContent = 
+                graph.nodes.filter(n => n.type === 'compound').length;
+        }
+        
+        // Create SVG
+        function createSVG() {
+            const width = document.getElementById('graph-canvas').parentElement.clientWidth;
+            const height = document.getElementById('graph-canvas').parentElement.clientHeight;
+            
+            svg = d3.select('#graph-canvas')
+                .attr('width', width)
+                .attr('height', height);
+            
+            // Clear previous content
+            svg.selectAll('*').remove();
+            
+            // Add background
+            svg.append('rect')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('fill', 'white');
+            
+            // Add layer group
+            g = svg.append('g');
+            
+            // Add zoom event
+            const zoom = d3.zoom().on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+            svg.call(zoom);
+        }
+        
+        // 创建图谱
+        function createGraph() {
+            const width = svg.attr('width');
+            const height = svg.attr('height');
+            
+            // 创建力导向图模拟
+            simulation = d3.forceSimulation(graph.nodes)
+                .force('link', d3.forceLink(graph.links)
+                    .id(d => d.id)
+                    .distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(30));
+            
+            // 创建链接元素
+            const links = g.selectAll('line')
+                .data(graph.links)
+                .enter()
+                .append('line')
+                .attr('stroke', '#999')
+                .attr('stroke-opacity', 0.6)
+                .attr('stroke-width', 1.5);
+            
+            // 创建节点元素
+            const nodes = g.selectAll('circle')
+                .data(graph.nodes)
+                .enter()
+                .append('circle')
+                .attr('r', d => d.type === 'element' ? 12 : (d.type === 'compound' ? 10 : 8))
+                .attr('fill', d => colorMap[d.type])
+                .attr('stroke', 'white')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .call(drag(simulation));
+            
+            // 添加标签
+            const labels = g.selectAll('text')
+                .data(graph.nodes)
+                .enter()
+                .append('text')
+                .attr('dy', 4)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', d => d.type === 'element' ? '10px' : '10px')
+                .attr('font-weight', d => d.type === 'element' ? 'bold' : 'normal')
+                .attr('fill', 'white')
+                .text(d => {
+                    // Elements: show symbol; others: show full English title
+                    if (d.type === 'element' && d.info && d.info.symbol) {
+                        return d.info.symbol;
+                    }
+                    return displayTitle(d);
+                });
+            
+            // 添加交互事件
+            nodes.on('mouseover', (event, d) => {
+                showTooltip(event, d);
+                highlightNode(nodes, links, labels, d);
+            })
+            .on('mouseout', () => {
+                hideTooltip();
+                resetHighlight(nodes, links, labels);
+            })
+            .on('click', (event, d) => {
+                showInfoPanel(d);
+            });
+            
+            // 更新位置的回调
+            simulation.on('tick', () => {
+                links
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                nodes
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+        }
+        
+        // 拖拽函数
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+            
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+            
+            return d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended);
+        }
+        
+        // Show tooltip
+        function showTooltip(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <div class="title">${displayTitle(d)}</div>
+                <div>Type: ${typeLabel(d.type)}</div>
+                ${d.info && d.info.symbol ? `<div>Symbol: ${d.info.symbol}</div>` : ''}
+                ${d.info && d.info.atomic_number ? `<div>Atomic #: ${d.info.atomic_number}</div>` : ''}
+            `;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY + 10) + 'px';
+        }
+        
+        // Hide tooltip
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+        
+        // 高亮节点
+        function highlightNode(nodes, links, labels, d) {
+            nodes.style('opacity', n => n === d ? 1 : 0.3);
+            links.style('opacity', l => l.source === d || l.target === d ? 1 : 0.1);
+            labels.style('opacity', n => n === d ? 1 : 0.3);
+        }
+        
+        // 重置高亮
+        function resetHighlight(nodes, links, labels) {
+            nodes.style('opacity', 1);
+            links.style('opacity', 0.6);
+            labels.style('opacity', 1);
+        }
+        
+        // Show info panel
+        function showInfoPanel(d) {
+            const panel = document.getElementById('infoPanel');
+            panel.innerHTML = `
+                <h3>${displayTitle(d)}</h3>
+                <div class="info-item">Type: ${typeLabel(d.type)}</div>
+                ${d.info && d.info.symbol ? `<div class="info-item">Symbol: ${d.info.symbol}</div>` : ''}
+                ${d.info && d.info.atomic_number ? `<div class="info-item">Atomic #: ${d.info.atomic_number}</div>` : ''}
+                <div class="info-item">Relations: ${graph.links.filter(l => l.source.id === d.id || l.target.id === d.id).length}</div>
+            `;
+            panel.style.display = 'block';
+        }
+        
+        // Type label
+        function typeLabel(type) {
+            const labels = {
+                'element': 'Element',
+                'compound': 'Compound',
+                'group': 'Classification'
+            };
+            return labels[type] || type;
+        }
+        
+        // Update node list
+        function updateNodeList() {
+            const nodeList = document.getElementById('nodeList');
+            const elements = graph.nodes.filter(n => n.type === 'element').sort((a, b) => displayTitle(a).localeCompare(displayTitle(b)));
+            
+            nodeList.innerHTML = elements.map(node => `
+                <div class="node-item ${node.type}" onclick="searchAndHighlight('${displayTitle(node)}')">
+                    <div class="name">${displayTitle(node)}</div>
+                    <div class="type">${node.info && node.info.symbol ? node.info.symbol : ''}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Search and highlight
+        function searchAndHighlight(query) {
+            const nodes = g.selectAll('circle');
+            const labels = g.selectAll('text');
+            const links = g.selectAll('line');
+            
+            const results = graph.nodes.filter(n => 
+                n.title.toLowerCase().includes(query.toLowerCase()) ||
+                (n.info && n.info.symbol && n.info.symbol.toLowerCase().includes(query.toLowerCase()))
+            );
+            
+            if (results.length > 0) {
+                highlightNode(nodes, links, labels, results[0]);
+            }
+        }
+        
+        // 搜索框事件
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            searchAndHighlight(e.target.value);
+        });
+        
+
+        
+        // 页面加载完成后加载图谱
+        window.addEventListener('load', loadGraph);
+        
+        // 窗口大小变化时重新渲染
+        window.addEventListener('resize', () => {
+            if (graph) {
+                createSVG();
+                createGraph();
+            }
+        });
+    </script>
+</body>
+</html>

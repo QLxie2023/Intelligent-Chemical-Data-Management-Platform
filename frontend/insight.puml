@@ -1,0 +1,33 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+class InsightComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    + String[] compounds // Mock Data
+    + String[] conditions // Mock Data
+    + Boolean showCreateModal // Controls create modal visibility
+    + Boolean isCreating // Is creating/uploading
+    + Object newProject // Project form data
+    + File selectedFile
+    + Image selectedImage
+    + String errorMsg
+    + String fileUploadMsg
+    
+    ' Methods / Logic Functions
+    + selectFile(e) // Select file handler
+    + selectImage(e) // Select image handler
+    + uploadFile(projectId, file) // Upload file
+    + uploadImage(projectId, image) // Upload image
+    + createProject() // Create project (handles file/image upload)
+    + resetFormAndFiles()
+    + logout()
+}
+
+class RequestService <<Utility>>
+class Router <<Dependency>>
+
+InsightComponent ..> RequestService : calls API
+InsightComponent ..> Router : navigation
+
+@enduml

@@ -1,0 +1,59 @@
+select_origin: directory
+files_origin: 'C:/Users/yang/Desktop/my-notes-site/vault'
+# nodes_origin: 'C:/Users/yang/Desktop/my-notes-site/vault/_title2id.csv'
+# links_origin: 'C:/Users/yang/Desktop/my-notes-site/vault/_title2id.csv'
+# nodes_online: 'C:/Users/yang/Desktop/my-notes-site/vault/_title2id.csv'
+links_online: ''
+images_origin: ''
+export_target: 'chemistry_cosmoscope.html'
+history: true
+focus_max: 2
+record_types:
+  element:
+    fill: '#4a90e2'
+    stroke: '#2e5c8a'
+  group:
+    fill: '#e24a90'
+    stroke: '#8a2e5c'
+  undefined:
+    fill: '#858585'
+    stroke: '#858585'
+link_types:
+  belongs_to:
+    stroke: simple
+    color: '#4a90e2'
+  related_to:
+    stroke: dashed
+    color: '#50c878'
+  undefined:
+    stroke: simple
+    color: '#e1e1e1'
+record_filters: []
+graph_background_color: '#ffffff'
+graph_highlight_color: '#ff6a6a'
+graph_highlight_on_hover: true
+graph_text_size: 10
+graph_arrows: true
+node_size_method: degree
+node_size: 10
+node_size_max: 20
+node_size_min: 2
+attraction_force: 200
+attraction_distance_max: 250
+attraction_vertical: 0
+attraction_horizontal: 0
+views: {}
+chronological_record_meta: last_edit
+record_metas: []
+title: 'Chemistry Knowledge Graph'
+author: 'Yang'
+description: 'A knowledge graph of chemical elements and their groups'
+keywords: ['chemistry', 'elements', 'periodic table', 'chemical groups']
+link_symbol: ''
+csl: ''
+bibliography: ''
+csl_locale: ''
+css_custom: ''
+devtools: false
+lang: en
+name: 'Chemistry Cosmoscope'

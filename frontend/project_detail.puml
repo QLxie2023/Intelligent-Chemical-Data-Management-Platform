@@ -1,0 +1,39 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+class ProjectDetailComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    - String projectId [From Route] // Project ID
+    + Boolean loading
+    + String error
+    + Object project // Project details
+    + List<File> files // Project file list
+    + List<Image> images // Project image list
+    + String previewUrl // URL for file preview
+    + String previewType // Type of file being previewed
+    + File selectedFile
+    + Image selectedImage
+    + String fileMsg // File upload message
+    
+    ' Methods / Logic Functions
+    + fetchProjectDetail() // Get project details
+    + fetchFiles() // Get file list
+    + fetchImages() // Get image list
+    + openPreview(file) // Display file/image preview
+    + handleFileSelect(e) // Select file
+    + handleImageSelect(e) // Select image
+    + uploadFile() // Upload file to current project
+    + uploadImage() // Upload image to current project
+}
+
+' Dependencies
+class RequestService <<Utility>>
+class Router <<Dependency>>
+class Route <<Dependency>>
+
+' Relationships
+ProjectDetailComponent ..> RequestService : calls API
+ProjectDetailComponent ..> Route : uses project ID
+
+@enduml

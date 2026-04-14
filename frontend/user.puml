@@ -1,0 +1,25 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+class UserComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    + List<User> users // User list (Mock Data)
+    + String searchKeyword // Search keyword
+    + User selectedUser // Currently selected user
+    + List<User> filteredUsers [Computed] // Filtered user list
+    
+    ' Methods / Logic Functions
+    + selectUser(user) // Select user for detail view
+    + logout() // Handle logout
+}
+
+' Dependencies
+class Router <<Dependency>>
+class LocalStorage <<System>>
+
+' Relationships
+UserComponent ..> Router : navigation
+UserComponent ..> LocalStorage : token management
+
+@enduml

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="generator" content="Custom Chemistry Cosmoscope">
+    <meta name="title" content="Chemistry Knowledge Graph">
+    <meta name="author" content="Yang">
+    <meta name="description" content="A knowledge graph of chemical elements and their groups">
+    <meta name="keywords" content="chemistry, elements, periodic table, chemical groups">
+    <meta name="date" content="December 3, 2025">
+    <title>Chemistry Cosmoscope</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAIGaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA2LjAuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIgogICAgICAgICAgICB4bWxuczpleGlmPSJodHRwOi8vbnMuYWRvYmUuY29tL2V4aWYvMS4wLyI+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDxleGlmOlBpeGVsWERpbWVuc2lvbj4xMDI0PC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxZRGltZW5zaW9uPjEwMjQ8L2V4aWY6UGl4ZWxZRGltZW5zaW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KokyVsAAAAAlwSFlzAAALEwAACxMBAJqcGAAAATtQTFRFR3BMDVJzDFx+GHSUAP//DVByCVd3AAAAAAD/AIKBCXKSBFJ0F1x/GFZ2EGCANmF8D2+QGHaXFG6NAFh8EnaXG3aWLHCOE2iIH3mZAEx4AFV6AG2QAXOUOn+dprG8AHGSGmuLGWmJfZqtUoahprrGD1V4CVV4FHeWFnWWLmeIAFp8FWaGAFh7LmeGF2OGUHWNfZapAF+HUHSNfZaoAF6H/////Pz87O7x4uLio6Oj3t7eFWaJE16DGGCEIWuOAFqAGoCiADxyAFyHRG+MHoGjAGeQE3GUEG6S1tvhAH2iRX+cAG2Y5OjrAGWMiqCxoa+7iqGyobXBB2KGCF6DCGGFCl2DE4CiEX2gGXqdEX2fFX+iJHmcGXqcInmbAEx3aIWa193jAE12Z4Sa5ensZ5CmaZCn1t3j5Ons3t7fp3RRZgAAADV0Uk5TAHRwQQFHRAEBAkJ4+3h0eHBudPpy+3V1cvv7+vpy+/v7+/v7+52dmZl1+nX6dXX7+/v7+/siYXfnAAAA2ElEQVQYGQXBy07CUBRA0X1OD9zCQAloS4Nj40ii/gG/7UdoSYwxjowCgo9EQxrpfdS1wA0AAGDgEHcgO8qshw/xN+IscnG9tp6SfCjqp2hheHXrMhO6EB8Wr43Rz/qX2fSe+TbW0m8MlepMdvBVxCJTDHv/vkNulqs3fnaGIpJmqnWnOksiKKVIAoAkcoLR+fEGMWK3OfYJ5SWsJ2XlfVVOtmGFso+tP53AaOzbuMewqt4+Tj9pP0aH0lrJ/87nG1Elpa5cPufiDvTCUJWUGvM4cDkAAOSOf+M3WO+ZgJOzAAAAAElFTkSuQmCC" />
+    <style>
+        :root {
+            --element-color: #4a90e2;
+            --group-color: #e24a90;
+            --undefined-color: #858585;
+            --link-color: #e1e1e1;
+            --highlight: #ff6a6a;
+            --sans: system-ui, -apple-system, 'San Francisco', 'Helvetica Neue', 'Segoe UI', 'Arial', sans-serif;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: var(--sans);
+            font-size: 14px;
+            background: #f5f5f5;
+            color: #333;
+            overflow: hidden;
+        }
+        
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        #sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        #graph-container {
+            flex: 1;
+            position: relative;
+            background: white;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--element-color);
+        }
+        
+        h2 {
+            font-size: 18px;
+            margin: 20px 0 10px;
+            color: #555;
+        }
+        
+        .node-list {
+            list-style: none;
+        }
+        
+        .node-list li {
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: #f8f8f8;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .node-list li:hover {
+            background: var(--element-color);
+            color: white;
+            transform: translateX(4px);
+        }
+        
+        .node-list li.element {
+            border-left: 3px solid var(--element-color);
+        }
+        
+        .node-list li.group {
+            border-left: 3px solid var(--group-color);
+        }
+        
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 300px;
+            display: none;
+        }
+        
+        #info-panel.show {
+            display: block;
+        }
+        
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--element-color);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="sidebar">
+            <h1>Chemistry Knowledge Graph</h1>
+            <input type="text" class="search-box" placeholder="Search elements or groups..." id="search">
+            
+            <h2>📊 Elements (29)</h2>
+            <ul class="node-list" id="elements-list">
+                <li class="element" data-node="Argon">Argon</li>
+                <li class="element" data-node="Bromine">Bromine</li>
+                <li class="element" data-node="Calcium">Calcium</li>
+                <li class="element" data-node="Carbon">Carbon</li>
+                <li class="element" data-node="CarbonDioxide">Carbon Dioxide</li>
+                <li class="element" data-node="Chlorine">Chlorine</li>
+                <li class="element" data-node="Copper">Copper</li>
+                <li class="element" data-node="Fluorine">Fluorine</li>
+                <li class="element" data-node="Gold">Gold</li>
+                <li class="element" data-node="Helium">Helium</li>
+                <li class="element" data-node="Hydrogen">Hydrogen</li>
+                <li class="element" data-node="HydrogenChloride">Hydrogen Chloride</li>
+                <li class="element" data-node="Iodine">Iodine</li>
+                <li class="element" data-node="Iron">Iron</li>
+                <li class="element" data-node="IronOxides">Iron Oxides</li>
+                <li class="element" data-node="Lithium">Lithium</li>
+                <li class="element" data-node="MethaneCH4">Methane (CH₄)</li>
+                <li class="element" data-node="Neon">Neon</li>
+                <li class="element" data-node="NitricAcid">Nitric Acid</li>
+                <li class="element" data-node="Nitrogen">Nitrogen</li>
+                <li class="element" data-node="Oxygen">Oxygen</li>
+                <li class="element" data-node="Phosphorus">Phosphorus</li>
+                <li class="element" data-node="Silver">Silver</li>
+                <li class="element" data-node="Sodium">Sodium</li>
+                <li class="element" data-node="SodiumChloride">Sodium Chloride</li>
+            </ul>
+            
+            <h2>🔬 Groups (6)</h2>
+            <ul class="node-list" id="groups-list">
+                <li class="group" data-node="AlkaliMetals">Alkali Metals</li>
+                <li class="group" data-node="HaloGens">Halogens</li>
+                <li class="group" data-node="Metals">Metals</li>
+                <li class="group" data-node="NobleGases">Noble Gases</li>
+                <li class="group" data-node="NonMetals">Non-Metals</li>
+                <li class="group" data-node="TransitionMetals">Transition Metals</li>
+            </ul>
+        </div>
+        
+        <div id="graph-container">
+            <svg id="graph"></svg>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--element-color);"></div>
+                    <span>Elements</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--group-color);"></div>
+                    <span>Groups</span>
+                </div>
+            </div>
+            
+            <div id="info-panel">
+                <h3 id="info-title"></h3>
+                <p id="info-content"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script>
+        // Sample graph data based on your files
+        const graphData = {
+            nodes: [
+                // Elements
+                {id: 'Argon', type: 'element', group: 'NobleGases'},
+                {id: 'Bromine', type: 'element', group: 'HaloGens'},
+                {id: 'Calcium', type: 'element', group: 'Metals'},
+                {id: 'Carbon', type: 'element', group: 'NonMetals'},
+                {id: 'Chlorine', type: 'element', group: 'HaloGens'},
+                {id: 'Copper', type: 'element', group: 'TransitionMetals'},
+                {id: 'Fluorine', type: 'element', group: 'HaloGens'},
+                {id: 'Gold', type: 'element', group: 'TransitionMetals'},
+                {id: 'Helium', type: 'element', group: 'NobleGases'},
+                {id: 'Hydrogen', type: 'element', group: 'NonMetals'},
+                {id: 'Iodine', type: 'element', group: 'HaloGens'},
+                {id: 'Iron', type: 'element', group: 'TransitionMetals'},
+                {id: 'Lithium', type: 'element', group: 'AlkaliMetals'},
+                {id: 'Neon', type: 'element', group: 'NobleGases'},
+                {id: 'Nitrogen', type: 'element', group: 'NonMetals'},
+                {id: 'Oxygen', type: 'element', group: 'NonMetals'},
+                {id: 'Phosphorus', type: 'element', group: 'NonMetals'},
+                {id: 'Silver', type: 'element', group: 'TransitionMetals'},
+                {id: 'Sodium', type: 'element', group: 'AlkaliMetals'},
+                // Groups
+                {id: 'AlkaliMetals', type: 'group'},
+                {id: 'HaloGens', type: 'group'},
+                {id: 'Metals', type: 'group'},
+                {id: 'NobleGases', type: 'group'},
+                {id: 'NonMetals', type: 'group'},
+                {id: 'TransitionMetals', type: 'group'}
+            ],
+            links: []
+        };
+        
+        // Create links from elements to their groups
+        graphData.nodes.forEach(node => {
+            if (node.type === 'element' && node.group) {
+                graphData.links.push({
+                    source: node.id,
+                    target: node.group,
+                    type: 'belongs_to'
+                });
+            }
+        });
+        
+        // Graph dimensions
+        const width = window.innerWidth - 300;
+        const height = window.innerHeight;
+        
+        // Create SVG
+        const svg = d3.select('#graph')
+            .attr('width', width)
+            .attr('height', height);
+        
+        // Create force simulation
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(30));
+        
+        // Create links
+        const link = svg.append('g')
+            .selectAll('line')
+            .data(graphData.links)
+            .join('line')
+            .attr('stroke', '#999')
+            .attr('stroke-opacity', 0.6)
+            .attr('stroke-width', 2);
+        
+        // Create nodes
+        const node = svg.append('g')
+            .selectAll('circle')
+            .data(graphData.nodes)
+            .join('circle')
+            .attr('r', d => d.type === 'group' ? 15 : 10)
+            .attr('fill', d => d.type === 'element' ? 'var(--element-color)' : 'var(--group-color)')
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 2)
+            .call(drag(simulation))
+            .on('mouseover', handleMouseOver)
+            .on('mouseout', handleMouseOut)
+            .on('click', handleClick);
+        
+        // Create labels
+        const label = svg.append('g')
+            .selectAll('text')
+            .data(graphData.nodes)
+            .join('text')
+            .text(d => d.id)
+            .attr('font-size', 12)
+            .attr('dx', 15)
+            .attr('dy', 4);
+        
+        // Update positions
+        simulation.on('tick', () => {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+            
+            node
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+            
+            label
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+        });
+        
+        // Drag behavior
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            
+            return d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended);
+        }
+        
+        // Event handlers
+        function handleMouseOver(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr('r', d.type === 'group' ? 18 : 13)
+                .attr('fill', 'var(--highlight)');
+        }
+        
+        function handleMouseOut(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr('r', d.type === 'group' ? 15 : 10)
+                .attr('fill', d.type === 'element' ? 'var(--element-color)' : 'var(--group-color)');
+        }
+        
+        function handleClick(event, d) {
+            const infoPanel = document.getElementById('info-panel');
+            const infoTitle = document.getElementById('info-title');
+            const infoContent = document.getElementById('info-content');
+            
+            infoTitle.textContent = d.id;
+            infoContent.textContent = d.type === 'element' 
+                ? `This is a chemical element belonging to ${d.group || 'unknown group'}.`
+                : `This is a chemical group containing multiple related elements.`;
+            
+            infoPanel.classList.add('show');
+        }
+        
+        // Search functionality
+        document.getElementById('search').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            node.attr('opacity', d => 
+                d.id.toLowerCase().includes(searchTerm) ? 1 : 0.2
+            );
+            
+            label.attr('opacity', d => 
+                d.id.toLowerCase().includes(searchTerm) ? 1 : 0.2
+            );
+        });
+        
+        // Sidebar click handlers
+        document.querySelectorAll('.node-list li').forEach(item => {
+            item.addEventListener('click', () => {
+                const nodeName = item.getAttribute('data-node');
+                const nodeData = graphData.nodes.find(n => n.id === nodeName);
+                if (nodeData) {
+                    handleClick(null, nodeData);
+                }
+            });
+        });
+        
+        // Close info panel when clicking outside
+        document.getElementById('graph-container').addEventListener('click', (e) => {
+            if (e.target.id === 'graph-container' || e.target.id === 'graph') {
+                document.getElementById('info-panel').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

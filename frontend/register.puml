@@ -1,0 +1,23 @@
+@startuml
+skinparam ClassAttributeIconStyle none
+left to right direction
+
+class RegisterComponent <<VueComponent>> {
+    ' Properties / Reactive Data
+    + Object form {username, password, invitationCode} // Registration form data
+    + String errorMsg
+    + String successMsg
+    
+    ' Methods / Logic Functions
+    + handleRegister() // Handle registration process
+}
+
+' Dependencies
+class RequestService <<Utility>>
+class Router <<Dependency>>
+
+' Relationships
+RegisterComponent ..> RequestService : calls /auth/register
+RegisterComponent ..> Router : redirect on success
+
+@enduml
