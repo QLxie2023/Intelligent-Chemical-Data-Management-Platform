@@ -18,10 +18,10 @@ export default defineConfig({
         // 允许跨域
         changeOrigin: true, 
         
-        // 可选：如果你在前端请求时不想要 '/api' 这个前缀，而后端路由也不需要它，可以进行路径重写
-        // pathRewrite: {
-        //   '^/api': '' // 重写后，请求 /api/users 会变成 /users 发给后端
-        // },
+        // 路径重写：将 /api 前缀重写为空字符串，这样请求 /api/v1/projects 会变成 /api/v1/projects 发给后端
+        pathRewrite: {
+          '^/api': '' // 重写后，请求 /api/v1/projects 会变成 /api/v1/projects 发给后端
+        },
       }
     }
   }

@@ -417,7 +417,9 @@ public class DataUploadController {    @Autowired
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("上传失败: " + e.getMessage()));
         }
-    }    @PostMapping("/projects/{projectId}/images")
+    }
+
+    @PostMapping("/projects/{projectId}/images")
     public ResponseEntity<ApiResponse<ImageUploadResponseDTO>> uploadImage(
             @PathVariable Long projectId,
             @RequestPart("image") MultipartFile image,

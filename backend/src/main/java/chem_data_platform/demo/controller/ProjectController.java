@@ -23,7 +23,9 @@ public class ProjectController {
     private ProjectService projectService;
 
     @Autowired
-    private JwtUtil jwtUtil;    /**
+    private JwtUtil jwtUtil;
+
+    /**
      * 创建新项目
      * POST /api/v1/projects
      */
@@ -132,6 +134,45 @@ public class ProjectController {
                     .body(ApiResponse.serverError("获取私有项目列表失败: " + e.getMessage()));
         }
     }    /**
+     * 搜索项目
+     * GET /api/v1/projects/search
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<ProjectResponseDTO>>> searchProjects(
+            @RequestParam("keyword") String keyword,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+            String username = jwtUtil.getUsernameFromToken(token);
+
+            List<ProjectResponseDTO> projects = projectService.searchProjects(keyword, username);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(ApiResponse.success("搜索结果", projects));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.badRequest(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.serverError("搜索项目失败: " + e.getMessage()));
+        }
+    }
+
+    /**
      * 获取所有公开项目列表
      * GET /api/v1/projects/public
      */
