@@ -122,4 +122,34 @@ public class UserService implements UserDetailsService {
                 .authorities(user.getRole())
                 .build();
     }
+
+    /**
+     * 获取用户信息
+     */
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElse(null);
+    }
+
+    /**
+     * 更新用户信息
+     */
+    public void updateUser(User user) {
+        userRepository.save(user);
+    }
+
+    /**
+     * 验证密码
+     */
+    public boolean verifyPassword(User user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
+
+    /**
+     * 更新密码
+     */
+    public void updatePassword(User user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

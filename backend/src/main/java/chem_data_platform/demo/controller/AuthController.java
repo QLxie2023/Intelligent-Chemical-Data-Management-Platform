@@ -14,6 +14,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -124,6 +125,7 @@ public class AuthController {
             UserInfoDTO userInfo = new UserInfoDTO(
                     user.getId().intValue(),
                     user.getUsername(),
+                    user.getEmail(),
                     user.getDisplayName(),
                     user.getRole()
             );
@@ -133,7 +135,8 @@ public class AuthController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("登录成功", loginResponse));        } catch (BadCredentialsException e) {
+                    .body(ApiResponse.success("登录成功", loginResponse));
+        } catch (BadCredentialsException e) {
             // 密码错误
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
@@ -143,6 +146,89 @@ public class AuthController {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.unauthorized("登录失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取用户信息接口
+     * 请求参数: username (query param)
+     * 返回: ApiResponse<UserInfoDTO> 用户信息
+     * 状态码: 200 成功, 404 用户不存在
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserInfoDTO>> getCurrentUser(@RequestParam String username) {
+        try {
+            // 查找用户
+            User user = userService.findByUsername(username);
+            if (user == null) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("用户不存在"));
+            }
+
+            // 构建用户信息 DTO
+            UserInfoDTO userInfo = new UserInfoDTO(
+                    user.getId().intValue(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getDisplayName(),
+                    user.getRole()
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(ApiResponse.success("获取用户信息成功", userInfo));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.serverError("获取用户信息失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 修改密码接口
+     * 请求参数: username (query param), oldPassword, newPassword (body)
+     * 返回: ApiResponse<Void>
+     * 状态码: 200 成功, 400 参数错误, 401 旧密码错误, 404 用户不存在
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestParam String username, @RequestBody Map<String, String> passwordData) {
+        try {
+            // 验证参数
+            if (!passwordData.containsKey("oldPassword") || !passwordData.containsKey("newPassword")) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.badRequest("请提供旧密码和新密码"));
+            }
+
+            // 查找用户
+            User user = userService.findByUsername(username);
+            if (user == null) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("用户不存在"));
+            }
+
+            // 验证旧密码
+            boolean isPasswordValid = userService.verifyPassword(user, passwordData.get("oldPassword"));
+            if (!isPasswordValid) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized("旧密码错误"));
+            }
+
+            // 更新密码
+            userService.updatePassword(user, passwordData.get("newPassword"));
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(ApiResponse.success("密码修改成功", null));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.serverError("修改密码失败: " + e.getMessage()));
         }
     }
 }

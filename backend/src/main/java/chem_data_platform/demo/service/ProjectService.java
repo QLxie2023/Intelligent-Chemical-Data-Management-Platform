@@ -652,4 +652,12 @@ public class ProjectService {
             System.err.println("❌ [DB] 文件不存在: fileId=" + fileId);
         }
     }
+
+    /**
+     * 搜索项目
+     */
+    public List<ProjectResponseDTO> searchProjects(String query, String username) {
+        // 实现搜索逻辑，或者暂时返回用户所有项目
+        return getUserProjects(username);
+    }
 }

@@ -41,6 +41,8 @@
           <h2 class="text-xl font-bold text-gray-700 mb-4">User Profile</h2>
 
           <div class="space-y-3">
+            <p class="text-red-600" v-if="profileError">{{ profileError }}</p>
+            
             <label class="block">
               <span class="text-gray-600">Username</span>
               <input v-model="profile.username"
@@ -139,17 +141,18 @@
 
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import request from "../utils/request";
 
 const router = useRouter();
 
-/* ------------------------ Personal Profile (Mock Data) ------------------------ */
+/* ------------------------ Personal Profile ------------------------ */
 const profile = ref({
-  username: "fisherr",
-  email: "fisherr@example.com",
-  role: "Researcher",
-  createdAt: "2025-01-12"
+  username: "",
+  email: "",
+  role: "",
+  createdAt: ""
 });
 
 /* ------------------------ Password Modification ------------------------ */
@@ -160,27 +163,7 @@ const password = ref({
 });
 
 const passwordError = ref("");
-
-const changePassword = () => {
-  passwordError.value = "";
-
-  if (!password.value.old || !password.value.new1 || !password.value.new2) {
-    passwordError.value = "All fields are required";
-    return;
-  }
-
-  if (password.value.new1 !== password.value.new2) {
-    passwordError.value = "The new passwords do not match";
-    return;
-  }
-
-  if (password.value.old === password.value.new1) {
-    passwordError.value = "The new password cannot be the same as the old password";
-    return;
-  }
-
-  alert("Password successfully changed (Simulated)");
-};
+const profileError = ref("");
 
 /* ------------------------ Upload History (Mock Data) ------------------------ */
 const uploadHistory = ref([
@@ -198,12 +181,90 @@ const uploadHistory = ref([
   }
 ]);
 
+/* ------------------------ Get User Info ------------------------ */
+const getUserInfo = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.username) {
+      router.push("/login");
+      return;
+    }
+
+    const response = await request.get(`/auth/me?username=${user.username}`);
+    if (response.code === 200) {
+      profile.value = {
+        username: response.data.username,
+        email: response.data.email || "",
+        role: response.data.role,
+        createdAt: "2025-01-12" // 从数据库获取
+      };
+    } else {
+      profileError.value = response.message || "获取用户信息失败";
+    }
+  } catch (error) {
+    console.error("获取用户信息失败:", error);
+    profileError.value = "获取用户信息失败";
+  }
+};
+
+/* ------------------------ Change Password ------------------------ */
+const changePassword = async () => {
+  passwordError.value = "";
+
+  if (!password.value.old || !password.value.new1 || !password.value.new2) {
+    passwordError.value = "All fields are required";
+    return;
+  }
+
+  if (password.value.new1 !== password.value.new2) {
+    passwordError.value = "The new passwords do not match";
+    return;
+  }
+
+  if (password.value.old === password.value.new1) {
+    passwordError.value = "The new password cannot be the same as the old password";
+    return;
+  }
+
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.username) {
+      router.push("/login");
+      return;
+    }
+
+    const response = await request.post(`/auth/change-password?username=${user.username}`, {
+      oldPassword: password.value.old,
+      newPassword: password.value.new1
+    });
+
+    if (response.code === 200) {
+      alert("Password successfully changed");
+      password.value = {
+        old: "",
+        new1: "",
+        new2: ""
+      };
+    } else {
+      passwordError.value = response.message || "修改密码失败";
+    }
+  } catch (error) {
+    console.error("修改密码失败:", error);
+    passwordError.value = "修改密码失败";
+  }
+};
+
 /* ------------------------ Logout ------------------------ */
 const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   router.push("/login");
 };
+
+/* ------------------------ Mounted ------------------------ */
+onMounted(() => {
+  getUserInfo();
+});
 </script>
 
 

@@ -6,6 +6,7 @@ package chem_data_platform.demo.dto;
 public class UserInfoDTO {
     private Integer userId;
     private String username;
+    private String email;
     private String displayName;
     private String role;
 
@@ -14,9 +15,10 @@ public class UserInfoDTO {
     }
 
     // 全参构造器
-    public UserInfoDTO(Integer userId, String username, String displayName, String role) {
+    public UserInfoDTO(Integer userId, String username, String email, String displayName, String role) {
         this.userId = userId;
         this.username = username;
+        this.email = email;
         this.displayName = displayName;
         this.role = role;
     }
@@ -36,6 +38,14 @@ public class UserInfoDTO {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getDisplayName() {
