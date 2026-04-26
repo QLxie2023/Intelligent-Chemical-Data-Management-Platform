@@ -310,4 +310,43 @@ public class ProjectController {
     }
 
     // File/image upload endpoints moved to DataUploadController to avoid duplicate mappings.
+
+    /**
+     * 删除项目
+     * POST /api/v1/projects/{projectId}/delete
+     */
+    @PostMapping("/{projectId}/delete")
+    public ResponseEntity<ApiResponse<?>> deleteProject(
+            @PathVariable Long projectId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+            String username = jwtUtil.getUsernameFromToken(token);
+
+            projectService.deleteProject(projectId, username);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(ApiResponse.success("项目删除成功！", null));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.badRequest(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.serverError("项目删除失败: " + e.getMessage()));
+        }
+    }
 }

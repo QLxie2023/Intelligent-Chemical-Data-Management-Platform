@@ -69,12 +69,26 @@
           <div
             v-for="file in files"
             :key="file.fileId || file.imageId"
-            class="p-4 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer"
+            class="p-4 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer relative"
             @click="openPreview(file)"
           >
             <p class="font-semibold text-blue-700">{{ file.fileName || file.imageName }}</p>
             <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
             <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
+            <p class="text-xs text-gray-400">Uploader: {{ file.uploaderUsername || 'Unknown' }}</p>
+            
+            <!-- Delete button -->
+            <button
+              v-if="canDelete(file)"
+              @click.stop="deleteFile(file)"
+              class="absolute top-2 right-2 text-red-500 hover:text-red-700 transition"
+              title="Delete file"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -529,6 +543,61 @@ async function loadKnowledgeGraph() {
   } catch (e) {
     console.error(e);
     alert('Failed to load knowledge graph');
+  }
+}
+
+/* ---------- methods ---------- */
+// 检查用户是否有权限删除文件
+function canDelete(file) {
+  // 获取当前用户信息
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return false;
+  
+  const user = JSON.parse(userStr);
+  const currentUsername = user.username;
+  
+  // 检查是否是文件上传者
+  if (file.uploaderUsername === currentUsername) {
+    return true;
+  }
+  
+  // 检查是否是项目所有者
+  if (project.value && project.value.ownerUsername === currentUsername) {
+    return true;
+  }
+  
+  return false;
+}
+
+// 删除文件
+async function deleteFile(file) {
+  if (!confirm('确定要删除这个文件吗？')) {
+    return;
+  }
+  
+  try {
+    if (file.fileId) {
+      // 删除文件
+      const res = await request.post(`/files/${file.fileId}/delete`);
+      if (res.code === 200) {
+        alert('文件删除成功');
+        await fetchFiles(); // 重新获取文件列表
+      } else {
+        alert('删除失败: ' + res.message);
+      }
+    } else if (file.imageId) {
+      // 删除图片
+      const res = await request.post(`/images/${file.imageId}/delete`);
+      if (res.code === 200) {
+        alert('图片删除成功');
+        await fetchFiles(); // 重新获取文件列表
+      } else {
+        alert('删除失败: ' + res.message);
+      }
+    }
+  } catch (err) {
+    console.error('删除文件失败:', err);
+    alert('删除失败，请检查网络连接');
   }
 }
 

@@ -447,4 +447,62 @@ public class DataUploadController {    @Autowired
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("上传失败: " + e.getMessage()));
         }
     }
+
+    /**
+     * 删除文件
+     * DELETE /api/v1/files/{fileId}
+     */
+    @PostMapping("/files/{fileId}/delete")
+    public ResponseEntity<ApiResponse<?>> deleteFile(
+            @PathVariable Long fileId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("无效的认证令牌"));
+            }
+
+            String username = jwtUtil.getUsernameFromToken(token);
+            projectService.deleteFile(fileId, username);
+
+            return ResponseEntity.ok(ApiResponse.success("文件删除成功", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.badRequest(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("删除失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 删除图片
+     * DELETE /api/v1/images/{imageId}
+     */
+    @PostMapping("/images/{imageId}/delete")
+    public ResponseEntity<ApiResponse<?>> deleteImage(
+            @PathVariable Long imageId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("无效的认证令牌"));
+            }
+
+            String username = jwtUtil.getUsernameFromToken(token);
+            projectService.deleteImage(imageId, username);
+
+            return ResponseEntity.ok(ApiResponse.success("图片删除成功", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.badRequest(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("删除失败: " + e.getMessage()));
+        }
+    }
 }

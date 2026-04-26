@@ -660,4 +660,202 @@ public class ProjectService {
         // 实现搜索逻辑，或者暂时返回用户所有项目
         return getUserProjects(username);
     }
+
+    /**
+     * 删除文件
+     * 权限检查：只有文件上传者或项目所有者可以删除
+     */
+    @Transactional
+    public void deleteFile(Long fileId, String username) {
+        // 获取用户信息
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+        Long userId = user.getId();
+
+        // 查找文件信息
+        Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
+        if (fileOpt.isEmpty()) {
+            throw new IllegalArgumentException("文件不存在");
+        }
+
+        FileInfo fileInfo = fileOpt.get();
+        Long projectId = fileInfo.getProjectId();
+
+        // 权限检查：文件上传者或项目所有者
+        boolean isUploader = fileInfo.getUploaderId().equals(userId);
+        boolean isProjectOwner = false;
+        
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (projectOpt.isPresent()) {
+            isProjectOwner = projectOpt.get().getOwnerId().equals(userId);
+        }
+
+        if (!isUploader && !isProjectOwner) {
+            throw new IllegalArgumentException("无权限删除此文件");
+        }
+
+        // 删除物理文件
+        String filePath = fileInfo.getFilePath();
+        if (filePath != null) {
+            File file = new File(filePath);
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                if (deleted) {
+                    System.out.println("✓ 物理文件已删除: " + filePath);
+                } else {
+                    System.err.println("✗ 无法删除物理文件: " + filePath);
+                }
+            }
+        }
+
+        // 删除数据库记录
+        fileInfoRepository.delete(fileInfo);
+        System.out.println("✓ 数据库文件记录已删除，fileId: " + fileId);
+    }
+
+    /**
+     * 删除图片
+     * 权限检查：只有图片上传者或项目所有者可以删除
+     */
+    @Transactional
+    public void deleteImage(Long imageId, String username) {
+        // 获取用户信息
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+        Long userId = user.getId();
+
+        // 查找图片信息
+        Optional<ImageInfo> imageOpt = imageInfoRepository.findById(imageId);
+        if (imageOpt.isEmpty()) {
+            throw new IllegalArgumentException("图片不存在");
+        }
+
+        ImageInfo imageInfo = imageOpt.get();
+        Long projectId = imageInfo.getProjectId();
+
+        // 权限检查：图片上传者或项目所有者
+        boolean isUploader = imageInfo.getUploaderId().equals(userId);
+        boolean isProjectOwner = false;
+        
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (projectOpt.isPresent()) {
+            isProjectOwner = projectOpt.get().getOwnerId().equals(userId);
+        }
+
+        if (!isUploader && !isProjectOwner) {
+            throw new IllegalArgumentException("无权限删除此图片");
+        }
+
+        // 删除物理文件
+        String imagePath = uploadBasePath + "/projects/" + projectId + "/images/" + imageInfo.getImageName();
+        File file = new File(imagePath);
+        if (file.exists()) {
+            boolean deleted = file.delete();
+            if (deleted) {
+                System.out.println("✓ 物理图片已删除: " + imagePath);
+            } else {
+                System.err.println("✗ 无法删除物理图片: " + imagePath);
+            }
+        }
+
+        // 删除数据库记录
+        imageInfoRepository.delete(imageInfo);
+        System.out.println("✓ 数据库图片记录已删除，imageId: " + imageId);
+    }
+
+    /**
+     * 删除项目
+     * 权限检查：只有项目所有者可以删除
+     */
+    @Transactional
+    public void deleteProject(Long projectId, String username) {
+        // 获取用户信息
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+        Long userId = user.getId();
+
+        // 查找项目信息
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (projectOpt.isEmpty()) {
+            throw new IllegalArgumentException("项目不存在");
+        }
+
+        Project project = projectOpt.get();
+
+        // 权限检查：只有项目所有者可以删除
+        if (!project.getOwnerId().equals(userId)) {
+            throw new IllegalArgumentException("无权限删除此项目");
+        }
+
+        // 删除项目相关的所有文件
+        List<FileInfo> files = fileInfoRepository.findAll().stream()
+                .filter(f -> f.getProjectId().equals(projectId))
+                .collect(Collectors.toList());
+
+        for (FileInfo file : files) {
+            // 删除物理文件
+            String filePath = file.getFilePath();
+            if (filePath != null) {
+                File physicalFile = new File(filePath);
+                if (physicalFile.exists()) {
+                    boolean deleted = physicalFile.delete();
+                    if (deleted) {
+                        System.out.println("✓ 物理文件已删除: " + filePath);
+                    } else {
+                        System.err.println("✗ 无法删除物理文件: " + filePath);
+                    }
+                }
+            }
+            // 删除数据库记录
+            fileInfoRepository.delete(file);
+        }
+
+        // 删除项目相关的所有图片
+        List<ImageInfo> images = imageInfoRepository.findAll().stream()
+                .filter(i -> i.getProjectId().equals(projectId))
+                .collect(Collectors.toList());
+
+        for (ImageInfo image : images) {
+            // 删除物理文件
+            String imagePath = uploadBasePath + "/projects/" + projectId + "/images/" + image.getImageName();
+            File physicalFile = new File(imagePath);
+            if (physicalFile.exists()) {
+                boolean deleted = physicalFile.delete();
+                if (deleted) {
+                    System.out.println("✓ 物理图片已删除: " + imagePath);
+                } else {
+                    System.err.println("✗ 无法删除物理图片: " + imagePath);
+                }
+            }
+            // 删除数据库记录
+            imageInfoRepository.delete(image);
+        }
+
+        // 删除项目目录
+        File projectDir = new File(uploadBasePath + "/projects/" + projectId);
+        if (projectDir.exists()) {
+            deleteDirectory(projectDir);
+        }
+
+        // 删除数据库中的项目记录
+        projectRepository.delete(project);
+        System.out.println("✓ 项目已删除，projectId: " + projectId);
+    }
+
+    /**
+     * 递归删除目录
+     */
+    private void deleteDirectory(File directory) {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
+        directory.delete();
+    }
 }
