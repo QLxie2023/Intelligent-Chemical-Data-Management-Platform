@@ -28,7 +28,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  mvc:
+    static-path-pattern: /static/**,/resources/**,/public/**,/META-INF/resources/**
 jwt:
   secret: week7-2025-super-secret-key-ma-ruixin-lv-shu-yan
   expiration: 86400000   # 24小时
