@@ -67,7 +67,7 @@
             <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
             <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
             <span
-              v-if="file._analysisStatus === 'PROCESSING'"
+              v-if="file._analysisStatus === 'PROCESSING' || file._analysisStatus === 'PENDING'"
               class="absolute top-2 right-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full"
             >Analyzing...</span>
             <span
@@ -144,7 +144,9 @@
 
               <!-- PENDING state -->
               <div v-else-if="analysisStatus === 'PENDING'" class="flex flex-col items-center justify-center h-full">
-                <p class="text-gray-500">Analysis not started yet.</p>
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+                <p class="text-purple-700 font-semibold">AI is analyzing, please wait...</p>
+                <p class="text-sm text-gray-500 mt-2">{{ analysisMsg }}</p>
               </div>
 
               <!-- COMPLETED state: editable form -->
@@ -349,6 +351,8 @@ const currentFileType = ref('file');
 const analysisStatus = ref('');
 const saving = ref(false);
 const saveMsg = ref('');
+let pollingFileId = null;
+let reanalyzingFileIds = new Set();
 
 const editForm = ref({
   summary: '',
@@ -365,6 +369,7 @@ const graphData = ref(null);
 const showGraph = ref(false);
 
 let analysisTimer = null;
+let globalStatusTimer = null;
 
 const tableHeaders = computed(() => {
   if (editForm.value.tableData.length > 0) {
@@ -389,12 +394,12 @@ async function fetchProjectDetail() {
 async function fetchFiles() {
   files.value = [];
 
+  const allItems = [];
+
   try {
     const res = await request.get(`/projects/${projectId}/files`);
     if (res.code === 200 && res.data) {
-      const fileItems = res.data.map(f => ({ ...f, _analysisStatus: null }));
-      files.value.push(...fileItems);
-      fileItems.forEach(f => checkFileAnalysisStatus(f, f.fileId));
+      allItems.push(...res.data.map(f => ({ ...f, _analysisStatus: null, _itemType: 'file' })));
     }
   } catch (err) {
     console.error(`File list API error: ${err.message}`);
@@ -403,33 +408,39 @@ async function fetchFiles() {
   try {
     const img = await request.get(`/projects/${projectId}/images`);
     if (img.code === 200 && img.data) {
-      const imageItems = img.data.map(i => ({ ...i, _analysisStatus: null }));
-      files.value.push(...imageItems);
-      imageItems.forEach(i => checkFileAnalysisStatus(i, i.imageId));
+      allItems.push(...img.data.map(i => ({ ...i, _analysisStatus: null, _itemType: 'image' })));
     }
   } catch (err) {
     console.error(`Image list API error: ${err.message}`);
   }
-}
 
-async function checkFileAnalysisStatus(fileItem, fileId) {
-  try {
-    const ft = fileItem.fileType ? 'file' : 'image';
-    const res = await request.get(`/files/${fileId}/analysis?fileType=${ft}`);
-    if (res.code === 200 && res.data) {
-      fileItem._analysisStatus = res.data.status;
+  const statusPromises = allItems.map(async (item) => {
+    const fileId = item.fileId || item.imageId;
+    const ft = item.fileType ? 'file' : 'image';
+    try {
+      const res = await request.get(`/files/${fileId}/analysis?fileType=${ft}`);
+      if (res.code === 200 && res.data) {
+        item._analysisStatus = res.data.status || 'PENDING';
+      } else {
+        item._analysisStatus = 'PENDING';
+      }
+    } catch {
+      item._analysisStatus = 'PENDING';
     }
-  } catch {
-    fileItem._analysisStatus = null;
-  }
+  });
+
+  await Promise.all(statusPromises);
+  files.value = allItems;
+
+  startGlobalStatusPolling();
 }
 
 async function openPreview(file) {
   currentPreviewFile.value = file;
   currentFileId.value = file.fileId || file.imageId;
   currentFileType.value = file.fileType ? 'file' : 'image';
-  analysisStatus.value = '';
-  analysisMsg.value = '';
+  analysisStatus.value = 'PROCESSING';
+  analysisMsg.value = 'Loading analysis status...';
   saveMsg.value = '';
   showGraph.value = false;
   resetEditForm();
@@ -475,6 +486,9 @@ async function openPreview(file) {
 function closePreview() {
   previewUrl.value = '';
   stopPolling();
+  if (currentFileId.value && reanalyzingFileIds.has(currentFileId.value) && analysisStatus.value === 'COMPLETED') {
+    reanalyzingFileIds.delete(currentFileId.value);
+  }
 }
 
 function resetEditForm() {
@@ -506,23 +520,36 @@ async function loadAnalysisResults(fileId) {
     }
 
     if (data.status === 'COMPLETED') {
-      editForm.value.summary = data.summary || '';
-      editForm.value.standardizedName = data.standardized_name || '';
-      editForm.value.dataDescription = data.data_description || '';
-      editForm.value.keywords = Array.isArray(data.keywords) ? [...data.keywords] : [];
-      editForm.value.tableData = Array.isArray(data.tableData) ? JSON.parse(JSON.stringify(data.tableData)) : [];
+      let sourceData = data;
+      const isReanalyzing = reanalyzingFileIds.has(fileId);
+      if (!isReanalyzing && data.confirmedData) {
+        try {
+          sourceData = JSON.parse(data.confirmedData);
+        } catch (e) {
+          console.error('Parse confirmedData failed:', e);
+          sourceData = data;
+        }
+      }
+      editForm.value.summary = sourceData.summary || data.summary || '';
+      editForm.value.standardizedName = sourceData.standardized_name || data.standardized_name || '';
+      editForm.value.dataDescription = sourceData.data_description || data.data_description || '';
+      editForm.value.keywords = Array.isArray(sourceData.keywords) ? [...sourceData.keywords] : (Array.isArray(data.keywords) ? [...data.keywords] : []);
+      editForm.value.tableData = Array.isArray(sourceData.tableData) ? JSON.parse(JSON.stringify(sourceData.tableData)) : (Array.isArray(data.tableData) ? JSON.parse(JSON.stringify(data.tableData)) : []);
       editForm.value.rawAnalysisData = data.analysisData || '';
-      editForm.value.isConfirmed = data.isConfirmed || false;
-      analysisMsg.value = data.isConfirmed
-        ? 'Results confirmed and saved. You can still edit and re-save.'
-        : 'AI analysis completed. You can review and edit the results.';
+      editForm.value.isConfirmed = isReanalyzing ? false : !!data.confirmedData;
+      analysisMsg.value = isReanalyzing
+        ? 'AI re-analysis completed. You can review and edit the new results.'
+        : (data.confirmedData
+          ? 'Results confirmed and saved. You can still edit and re-save.'
+          : 'AI analysis completed. You can review and edit the results.');
     } else if (data.status === 'PROCESSING') {
       analysisMsg.value = 'AI is analyzing the file, please wait...';
       startPolling(fileId);
     } else if (data.status === 'FAILED') {
       analysisMsg.value = data.errorReason || 'AI analysis failed';
     } else if (data.status === 'PENDING') {
-      analysisMsg.value = 'Triggering AI analysis...';
+      analysisStatus.value = 'PROCESSING';
+      analysisMsg.value = 'AI is analyzing, please wait...';
       await triggerAnalysis(fileId);
     }
   } catch (err) {
@@ -533,6 +560,7 @@ async function loadAnalysisResults(fileId) {
 
 function startPolling(fileId) {
   stopPolling();
+  pollingFileId = fileId;
   analysisTimer = setInterval(() => pollAnalysisStatus(fileId), 2000);
 }
 
@@ -563,6 +591,13 @@ async function reAnalyze(fileId) {
     editForm.value.isConfirmed = false;
     analysisStatus.value = 'PROCESSING';
     analysisMsg.value = 'Re-analyzing with AI, please wait...';
+
+    reanalyzingFileIds.add(fileId);
+
+    const fileItem = files.value.find(f => (f.fileId || f.imageId) === fileId);
+    if (fileItem) fileItem._analysisStatus = 'PROCESSING';
+    startGlobalStatusPolling();
+
     const res = await request.post(`/files/${fileId}/analysis?fileType=${currentFileType.value || 'file'}`);
     if (res.code === 200) {
       startPolling(fileId);
@@ -590,18 +625,32 @@ async function pollAnalysisStatus(fileId) {
 
     if (data.status === 'PROCESSING') {
       analysisMsg.value = 'AI is analyzing the file, please wait...';
+      const fileItem = files.value.find(f => (f.fileId || f.imageId) === fileId);
+      if (fileItem) fileItem._analysisStatus = 'PROCESSING';
     }
     if (data.status === 'COMPLETED') {
-      editForm.value.summary = data.summary || '';
-      editForm.value.standardizedName = data.standardized_name || '';
-      editForm.value.dataDescription = data.data_description || '';
-      editForm.value.keywords = Array.isArray(data.keywords) ? [...data.keywords] : [];
-      editForm.value.tableData = Array.isArray(data.tableData) ? JSON.parse(JSON.stringify(data.tableData)) : [];
+      let sourceData = data;
+      const isReanalyzing = reanalyzingFileIds.has(fileId);
+      if (!isReanalyzing && data.confirmedData) {
+        try {
+          sourceData = JSON.parse(data.confirmedData);
+        } catch (e) {
+          console.error('Parse confirmedData failed:', e);
+          sourceData = data;
+        }
+      }
+      editForm.value.summary = sourceData.summary || data.summary || '';
+      editForm.value.standardizedName = sourceData.standardized_name || data.standardized_name || '';
+      editForm.value.dataDescription = sourceData.data_description || data.data_description || '';
+      editForm.value.keywords = Array.isArray(sourceData.keywords) ? [...sourceData.keywords] : (Array.isArray(data.keywords) ? [...data.keywords] : []);
+      editForm.value.tableData = Array.isArray(sourceData.tableData) ? JSON.parse(JSON.stringify(sourceData.tableData)) : (Array.isArray(data.tableData) ? JSON.parse(JSON.stringify(data.tableData)) : []);
       editForm.value.rawAnalysisData = data.analysisData || '';
-      editForm.value.isConfirmed = data.isConfirmed || false;
-      analysisMsg.value = data.isConfirmed
-        ? 'Results confirmed and saved. You can still edit and re-save.'
-        : 'AI analysis completed. You can review and edit the results.';
+      editForm.value.isConfirmed = isReanalyzing ? false : !!data.confirmedData;
+      analysisMsg.value = isReanalyzing
+        ? 'AI re-analysis completed. You can review and edit the new results.'
+        : (data.confirmedData
+          ? 'Results confirmed and saved. You can still edit and re-save.'
+          : 'AI analysis completed. You can review and edit the results.');
       stopPolling();
 
       const fileItem = files.value.find(f => (f.fileId || f.imageId) === fileId);
@@ -624,6 +673,52 @@ function stopPolling() {
   if (analysisTimer) {
     clearInterval(analysisTimer);
     analysisTimer = null;
+  }
+  pollingFileId = null;
+}
+
+function startGlobalStatusPolling() {
+  stopGlobalStatusPolling();
+  globalStatusTimer = setInterval(pollAllFileStatuses, 3000);
+}
+
+function stopGlobalStatusPolling() {
+  if (globalStatusTimer) {
+    clearInterval(globalStatusTimer);
+    globalStatusTimer = null;
+  }
+}
+
+async function pollAllFileStatuses() {
+  const processingItems = files.value.filter(
+    f => f._analysisStatus === 'PROCESSING' || f._analysisStatus === 'PENDING'
+  );
+  if (processingItems.length === 0) {
+    stopGlobalStatusPolling();
+    return;
+  }
+
+  const promises = processingItems.map(async (item) => {
+    const fileId = item.fileId || item.imageId;
+    const ft = item.fileType ? 'file' : 'image';
+    try {
+      const res = await request.get(`/files/${fileId}/analysis?fileType=${ft}`);
+      if (res.code === 200 && res.data) {
+        const newStatus = res.data.status;
+        if (item._analysisStatus !== newStatus) {
+          item._analysisStatus = newStatus;
+        }
+      }
+    } catch {}
+  });
+
+  await Promise.all(promises);
+
+  const stillProcessing = files.value.some(
+    f => f._analysisStatus === 'PROCESSING' || f._analysisStatus === 'PENDING'
+  );
+  if (!stillProcessing) {
+    stopGlobalStatusPolling();
   }
 }
 
@@ -664,6 +759,7 @@ async function saveAnalysisResult() {
     if (res.code === 200) {
       saveMsg.value = 'Results confirmed and saved successfully!';
       editForm.value.isConfirmed = true;
+      reanalyzingFileIds.delete(currentFileId.value);
     } else {
       saveMsg.value = 'Save failed: ' + (res.message || 'Unknown error');
     }
@@ -708,9 +804,18 @@ async function uploadFile() {
         analysisStatus.value = 'PROCESSING';
         analysisMsg.value = 'AI is analyzing the file, please wait...';
         startPolling(res.data.fileId);
-      }
 
-      fetchFiles();
+        files.value.push({
+          fileId: res.data.fileId,
+          fileName: res.data.fileName || 'Uploaded file',
+          fileType: res.data.fileType || 'file',
+          fileUrl: res.data.fileUrl,
+          uploadTimestamp: res.data.uploadTimestamp || new Date().toISOString(),
+          _analysisStatus: 'PROCESSING',
+          _itemType: 'file'
+        });
+        startGlobalStatusPolling();
+      }
     } else {
       fileMsg.value = 'Upload failed. ' + res.message;
     }
@@ -745,10 +850,19 @@ async function uploadImage() {
         currentFileType.value = 'image';
         analysisStatus.value = 'PROCESSING';
         analysisMsg.value = 'AI is analyzing the image, please wait...';
-        startPolling(res.data.imageId);
-      }
 
-      fetchFiles();
+        files.value.push({
+          imageId: res.data.imageId,
+          imageName: res.data.imageName || 'Uploaded image',
+          imageUrl: res.data.imageUrl,
+          uploadTimestamp: res.data.uploadTimestamp || new Date().toISOString(),
+          _analysisStatus: 'PROCESSING',
+          _itemType: 'image'
+        });
+        startGlobalStatusPolling();
+
+        triggerAnalysis(res.data.imageId);
+      }
     } else {
       imageMsg.value = 'Upload failed: ' + res.message;
     }
@@ -810,6 +924,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopPolling();
+  stopGlobalStatusPolling();
   if (currentBlobUrl.value) {
     URL.revokeObjectURL(currentBlobUrl.value);
   }

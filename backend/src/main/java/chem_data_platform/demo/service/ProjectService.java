@@ -301,6 +301,7 @@ public class ProjectService {
                 savedFileInfo.getId(),
                 savedFileInfo.getFileName(),
                 savedFileInfo.getFileType(),
+                savedFileInfo.getAccessUrl(),
                 savedFileInfo.getUploadTimestamp().format(FORMATTER)
         );
 
@@ -373,8 +374,7 @@ public class ProjectService {
                     savedImageInfo.getUploadTimestamp().format(FORMATTER)
             );
 
-            // 图片上传成功，分析不再自动触发
-            System.out.println("✓ 图片上传完成");
+            System.out.println("✓ 图片上传完成，准备触发分析");
 
             return dto;
         } catch (IOException e) {
@@ -568,7 +568,6 @@ public class ProjectService {
         FileInfo file = fileOpt.get();
         Map<String, Object> result = new HashMap<>();
         
-        // 获取分析状态
         String status = file.getAnalysisStatus();
         if (status == null) {
             status = "PENDING";
@@ -576,7 +575,6 @@ public class ProjectService {
         result.put("status", status);
         result.put("startTime", file.getAnalysisStartTime());
 
-        // 如果分析数据存在，尝试解析 JSON
         if (file.getAnalysisData() != null && !file.getAnalysisData().isEmpty()) {
             try {
                 ObjectMapper mapper = new ObjectMapper();
@@ -586,8 +584,12 @@ public class ProjectService {
                 );
                 result.put("summary", analysisDataMap.get("summary"));
                 result.put("tableData", analysisDataMap.get("tableData"));
+                result.put("keywords", analysisDataMap.get("keywords"));
+                result.put("data_description", analysisDataMap.get("data_description"));
+                result.put("standardized_name", analysisDataMap.get("standardized_name"));
+                result.put("analysisData", file.getAnalysisData());
+                result.put("confirmedData", file.getConfirmedData());
             } catch (Exception e) {
-                // JSON 解析失败，直接使用原始数据
                 result.put("summary", file.getAnalysisData());
                 result.put("tableData", null);
             }
@@ -596,7 +598,6 @@ public class ProjectService {
             result.put("tableData", null);
         }
 
-        // 如果分析失败，添加错误原因
         if ("FAILED".equals(status) && file.getAnalysisErrorReason() != null) {
             result.put("errorReason", file.getAnalysisErrorReason());
         }
@@ -650,6 +651,120 @@ public class ProjectService {
             System.out.println("✅ [DB] 已保存错误信息: fileId=" + fileId + ", 错误=" + errorReason);
         } else {
             System.err.println("❌ [DB] 文件不存在: fileId=" + fileId);
+        }
+    }
+
+    @Transactional
+    public void saveFileConfirmedData(Long fileId, String confirmedData) {
+        Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
+        if (fileOpt.isPresent()) {
+            FileInfo file = fileOpt.get();
+            file.setConfirmedData(confirmedData);
+            fileInfoRepository.save(file);
+            System.out.println("✅ [DB] 已保存确认数据: fileId=" + fileId);
+        } else {
+            throw new IllegalArgumentException("文件不存在: fileId=" + fileId);
+        }
+    }
+
+    @Transactional
+    public void saveImageConfirmedData(Long imageId, String confirmedData) {
+        Optional<ImageInfo> imgOpt = imageInfoRepository.findById(imageId);
+        if (imgOpt.isPresent()) {
+            ImageInfo image = imgOpt.get();
+            image.setConfirmedData(confirmedData);
+            imageInfoRepository.save(image);
+            System.out.println("✅ [DB] 已保存图片确认数据: imageId=" + imageId);
+        } else {
+            throw new IllegalArgumentException("图片不存在: imageId=" + imageId);
+        }
+    }
+
+    public Map<String, Object> getImageAnalysisStatus(Long imageId) {
+        Optional<ImageInfo> imgOpt = imageInfoRepository.findById(imageId);
+        if (!imgOpt.isPresent()) {
+            return null;
+        }
+
+        ImageInfo image = imgOpt.get();
+        Map<String, Object> result = new HashMap<>();
+        
+        String status = image.getAnalysisStatus();
+        if (status == null) {
+            status = "PENDING";
+        }
+        result.put("status", status);
+        result.put("startTime", image.getAnalysisStartTime());
+
+        if (image.getAnalysisData() != null && !image.getAnalysisData().isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> analysisDataMap = mapper.readValue(
+                    image.getAnalysisData(), 
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+                );
+                result.put("summary", analysisDataMap.get("summary"));
+                result.put("tableData", analysisDataMap.get("tableData"));
+                result.put("keywords", analysisDataMap.get("keywords"));
+                result.put("data_description", analysisDataMap.get("data_description"));
+                result.put("standardized_name", analysisDataMap.get("standardized_name"));
+                result.put("analysisData", image.getAnalysisData());
+                result.put("confirmedData", image.getConfirmedData());
+            } catch (Exception e) {
+                result.put("summary", image.getAnalysisData());
+                result.put("tableData", null);
+            }
+        } else {
+            result.put("summary", null);
+            result.put("tableData", null);
+        }
+
+        if ("FAILED".equals(status) && image.getAnalysisErrorReason() != null) {
+            result.put("errorReason", image.getAnalysisErrorReason());
+        }
+
+        return result;
+    }
+
+    public void updateImageAnalysisStatus(Long imageId, String status) {
+        Optional<ImageInfo> imgOpt = imageInfoRepository.findById(imageId);
+        if (imgOpt.isPresent()) {
+            ImageInfo image = imgOpt.get();
+            image.setAnalysisStatus(status);
+            if ("PROCESSING".equals(status)) {
+                image.setAnalysisStartTime(LocalDateTime.now());
+            }
+            imageInfoRepository.save(image);
+        }
+    }
+
+    @Transactional
+    public void saveImageAnalysisResult(Long imageId, String analysisData) {
+        Optional<ImageInfo> imgOpt = imageInfoRepository.findById(imageId);
+        if (imgOpt.isPresent()) {
+            ImageInfo image = imgOpt.get();
+            image.setAnalysisStatus("COMPLETED");
+            image.setAnalysisData(analysisData);
+            image.setAnalysisEndTime(LocalDateTime.now());
+            imageInfoRepository.save(image);
+            System.out.println("✅ [DB] 已保存图片分析结果: imageId=" + imageId + ", 数据长度=" + analysisData.length());
+        } else {
+            System.err.println("❌ [DB] 图片不存在: imageId=" + imageId);
+        }
+    }
+
+    @Transactional
+    public void saveImageAnalysisError(Long imageId, String errorReason) {
+        Optional<ImageInfo> imgOpt = imageInfoRepository.findById(imageId);
+        if (imgOpt.isPresent()) {
+            ImageInfo image = imgOpt.get();
+            image.setAnalysisStatus("FAILED");
+            image.setAnalysisErrorReason(errorReason);
+            image.setAnalysisEndTime(LocalDateTime.now());
+            imageInfoRepository.save(image);
+            System.out.println("✅ [DB] 已保存图片错误信息: imageId=" + imageId + ", 错误=" + errorReason);
+        } else {
+            System.err.println("❌ [DB] 图片不存在: imageId=" + imageId);
         }
     }
 

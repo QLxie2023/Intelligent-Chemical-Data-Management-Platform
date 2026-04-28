@@ -8,19 +8,19 @@ public class FileUploadResponseDTO {
     private Long fileId;
     private String fileName;
     private String fileType;
+    private String fileUrl;
     private String uploadTimestamp;
-    // 可选：关联的分析结果
     private Long analysisId;
     private String analysisSummary;
 
-    // 构造器
     public FileUploadResponseDTO() {
     }
 
-    public FileUploadResponseDTO(Long fileId, String fileName, String fileType, String uploadTimestamp) {
+    public FileUploadResponseDTO(Long fileId, String fileName, String fileType, String fileUrl, String uploadTimestamp) {
         this.fileId = fileId;
         this.fileName = fileName;
         this.fileType = fileType;
+        this.fileUrl = fileUrl;
         this.uploadTimestamp = uploadTimestamp;
     }
 
@@ -63,6 +63,14 @@ public class FileUploadResponseDTO {
 
     public void setFileType(String fileType) {
         this.fileType = fileType;
+    }
+
+    public String getFileUrl() {
+        return fileUrl;
+    }
+
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
     }
 
     public String getUploadTimestamp() {

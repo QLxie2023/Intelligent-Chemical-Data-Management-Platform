@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -207,7 +209,52 @@ public class DataUploadController {    @Autowired
      */
     private void saveAnalysisErrorSync(Long fileId, String errorMsg) {
         projectService.saveFileAnalysisError(fileId, errorMsg);
-    }/**
+    }
+
+    @PutMapping("/files/{fileId}/analysis")
+    public ResponseEntity<ApiResponse<?>> updateAnalysisResult(
+            @PathVariable Long fileId,
+            @RequestBody Map<String, Object> requestBody,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+            }
+
+            String confirmedData = (String) requestBody.get("confirmedData");
+            if (confirmedData == null || confirmedData.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.badRequest("confirmedData is required"));
+            }
+
+            String fileType = (String) requestBody.getOrDefault("fileType", "file");
+
+            if ("image".equals(fileType)) {
+                projectService.saveImageConfirmedData(fileId, confirmedData);
+            } else {
+                projectService.saveFileConfirmedData(fileId, confirmedData);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("fileId", fileId);
+            result.put("status", "CONFIRMED");
+
+            return ResponseEntity.ok(ApiResponse.success("确认保存成功", result));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.badRequest(e.getMessage()));
+        }
+    }
+
+    /**
      * 获取文件分析结果
      * GET /api/v1/files/{fileId}/analysis
      * 前端轮询此接口查询分析进度
