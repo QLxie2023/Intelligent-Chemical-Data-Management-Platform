@@ -7,8 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,7 +24,9 @@ import chem_data_platform.demo.service.ProjectService;
 import chem_data_platform.demo.service.AnalysisService;
 import chem_data_platform.demo.service.DataProcessingService;
 import chem_data_platform.demo.entity.FileInfo;
+import chem_data_platform.demo.entity.ImageInfo;
 import chem_data_platform.demo.repository.FileInfoRepository;
+import chem_data_platform.demo.repository.ImageInfoRepository;
 import chem_data_platform.demo.utils.JwtUtil;
 import chem_data_platform.demo.vo.ApiResponse;
 
@@ -51,6 +56,9 @@ public class DataUploadController {    @Autowired
     private FileInfoRepository fileInfoRepository;
 
     @Autowired
+    private ImageInfoRepository imageInfoRepository;
+
+    @Autowired
     private ApplicationContext applicationContext;  // 用于获取代理对象以启用 @Transactional
     
     @Value("${upload.base-path:C:/uploads/chem_data_platform}")
@@ -62,9 +70,9 @@ public class DataUploadController {    @Autowired
     @PostMapping("/files/{fileId}/analysis")
     public ResponseEntity<ApiResponse<?>> analyzeFile(
             @PathVariable Long fileId,
+            @RequestParam(value = "fileType", required = false, defaultValue = "file") String fileType,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // 验证认证信息
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
@@ -76,32 +84,39 @@ public class DataUploadController {    @Autowired
                     .body(ApiResponse.unauthorized("无效的认证令牌"));
             }
 
-            // 从数据库查询文件信息
-            Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
-            if (!fileOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.notFound("文件不存在"));
+            Long projectId;
+            File file;
+
+            if ("image".equals(fileType)) {
+                Optional<ImageInfo> imgOpt = imageInfoRepository.findById(fileId);
+                if (!imgOpt.isPresent()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("图片不存在"));
+                }
+                ImageInfo imageInfo = imgOpt.get();
+                projectId = imageInfo.getProjectId();
+                file = new File(uploadBasePath + "/projects/" + projectId + "/images/" + imageInfo.getImageName());
+                projectService.updateImageAnalysisStatus(fileId, "PROCESSING");
+            } else {
+                Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
+                if (!fileOpt.isPresent()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("文件不存在"));
+                }
+                FileInfo fileInfo = fileOpt.get();
+                projectId = fileInfo.getProjectId();
+                file = new File(uploadBasePath + "/projects/" + projectId + "/files/" + fileInfo.getFileName());
+                projectService.updateFileAnalysisStatus(fileId, "PROCESSING");
             }
 
-            FileInfo fileInfo = fileOpt.get();
-            
-            // 更新文件分析状态为 PROCESSING
-            projectService.updateFileAnalysisStatus(fileId, "PROCESSING");
-
-            // 异步触发文件分析任务
-            // 构造文件路径：uploadBasePath/projects/{projectId}/files/{fileName}
-            String filePath = uploadBasePath + "/projects/" + fileInfo.getProjectId() + "/files/" + fileInfo.getFileName();
-            File file = new File(filePath);
-            
-            // 在后台线程中执行分析（不阻塞 HTTP 响应）
-            performAnalysisAsync(fileInfo.getProjectId(), fileId, file);
+            performAnalysisAsync(projectId, fileId, file, fileType);
 
             Map<String, Object> result = new HashMap<>();
             result.put("fileId", fileId);
             result.put("status", "PROCESSING");
-            result.put("message", "文件分析已启动，AI 正在读取文献并提取特征...");
+            result.put("message", "AI analysis started...");
 
-            return ResponseEntity.ok(ApiResponse.success("文件分析请求已提交", result));
+            return ResponseEntity.ok(ApiResponse.success("分析请求已提交", result));
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -113,71 +128,70 @@ public class DataUploadController {    @Autowired
      * 关键：使用 ApplicationContext 获取代理对象，确保 @Transactional 生效
      */
     @Async("asyncExecutor")
-    public void performAnalysisAsync(Long projectId, Long fileId, File file) {
+    public void performAnalysisAsync(Long projectId, Long fileId, File file, String fileType) {
         try {
-            System.out.println("\n========== 🔄 异步分析任务启动 ==========");
-            System.out.println("线程: " + Thread.currentThread().getName());
-            System.out.println("projectId: " + projectId);
-            System.out.println("fileId: " + fileId);
-            System.out.println("文件路径: " + file.getAbsolutePath());
-            System.out.println("文件存在: " + file.exists());
-            System.out.println("文件大小: " + (file.exists() ? file.length() : "N/A") + " bytes");
-            
+            System.out.println("\n========== Async analysis started ==========");
+            System.out.println("projectId: " + projectId + ", fileId: " + fileId + ", type: " + fileType);
+            System.out.println("file: " + file.getAbsolutePath() + ", exists: " + file.exists());
+
             if (!file.exists()) {
-                String errorMsg = "文件不存在: " + file.getAbsolutePath();
-                System.err.println("❌ " + errorMsg);
-                // 通过代理对象调用，确保 @Transactional 生效
+                String errorMsg = "File not found: " + file.getAbsolutePath();
+                System.err.println("Error: " + errorMsg);
                 ProjectService proxyService = applicationContext.getBean(ProjectService.class);
-                proxyService.saveFileAnalysisError(fileId, errorMsg);
+                if ("image".equals(fileType)) {
+                    proxyService.saveImageAnalysisError(fileId, errorMsg);
+                } else {
+                    proxyService.saveFileAnalysisError(fileId, errorMsg);
+                }
                 return;
             }
-            
-            System.out.println("🔄 调用 AnalysisService.analyzeFile()...");
-            // 调用 AnalysisService 执行分析（支持 Kimi）
+
             var analysisResult = analysisService.analyzeFile(projectId, fileId, file);
-            
+
             if (analysisResult != null && analysisResult.getRawResponse() != null) {
-                // 分析成功，保存结果到数据库
                 String analysisJson = analysisResult.getRawResponse();
-                System.out.println("✅ 分析结果获取成功，长度: " + analysisJson.length() + " chars");
-                System.out.println("✅ 开始保存分析结果到数据库...");
-                
+                System.out.println("Analysis result received, length: " + analysisJson.length());
+
                 try {
-                    // 关键修改：通过代理对象调用，确保 @Transactional 生效
                     ProjectService proxyService = applicationContext.getBean(ProjectService.class);
-                    proxyService.saveFileAnalysisResult(fileId, analysisJson);
-                    System.out.println("✅ 分析结果已保存到数据库，fileId=" + fileId);
-                    System.out.println("✅ 分析状态已更新为 COMPLETED");
+                    if ("image".equals(fileType)) {
+                        proxyService.saveImageAnalysisResult(fileId, analysisJson);
+                    } else {
+                        proxyService.saveFileAnalysisResult(fileId, analysisJson);
+                    }
+                    System.out.println("Analysis result saved to DB: fileId=" + fileId);
                 } catch (Exception dbEx) {
-                    System.err.println("❌ 数据库保存失败: " + dbEx.getMessage());
-                    dbEx.printStackTrace();
+                    System.err.println("DB save failed: " + dbEx.getMessage());
                     ProjectService proxyService = applicationContext.getBean(ProjectService.class);
-                    proxyService.saveFileAnalysisError(fileId, "数据库保存失败: " + dbEx.getMessage());
+                    if ("image".equals(fileType)) {
+                        proxyService.saveImageAnalysisError(fileId, "DB save failed: " + dbEx.getMessage());
+                    } else {
+                        proxyService.saveFileAnalysisError(fileId, "DB save failed: " + dbEx.getMessage());
+                    }
                     return;
                 }
-                
-                System.out.println("✅ 文件分析完成: fileId=" + fileId);
-                System.out.println("========== ✅ 异步分析任务完成 ==========\n");
+
+                System.out.println("========== Async analysis complete ==========\n");
             } else {
-                // 分析结果为空
-                String errorMsg = "分析结果为空或 RawResponse 为 null";
-                System.err.println("❌ " + errorMsg);
+                String errorMsg = "Analysis result is empty";
+                System.err.println("Error: " + errorMsg);
                 ProjectService proxyService = applicationContext.getBean(ProjectService.class);
-                proxyService.saveFileAnalysisError(fileId, errorMsg);
+                if ("image".equals(fileType)) {
+                    proxyService.saveImageAnalysisError(fileId, errorMsg);
+                } else {
+                    proxyService.saveFileAnalysisError(fileId, errorMsg);
+                }
             }
-        } catch (RuntimeException e) {
-            // 分析失败，记录错误信息
-            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            System.err.println("❌ 异步分析异常: " + errorMsg);
-            e.printStackTrace();
-            ProjectService proxyService = applicationContext.getBean(ProjectService.class);
-            proxyService.saveFileAnalysisError(fileId, errorMsg);
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            System.err.println("❌ 异步分析异常: " + errorMsg);
+            System.err.println("Analysis exception: " + errorMsg);
             e.printStackTrace();
             ProjectService proxyService = applicationContext.getBean(ProjectService.class);
-            proxyService.saveFileAnalysisError(fileId, errorMsg);
+            if ("image".equals(fileType)) {
+                proxyService.saveImageAnalysisError(fileId, errorMsg);
+            } else {
+                proxyService.saveFileAnalysisError(fileId, errorMsg);
+            }
         }
     }
 
@@ -195,17 +209,14 @@ public class DataUploadController {    @Autowired
      */
     private void saveAnalysisErrorSync(Long fileId, String errorMsg) {
         projectService.saveFileAnalysisError(fileId, errorMsg);
-    }/**
-     * 获取文件分析结果
-     * GET /api/v1/files/{fileId}/analysis
-     * 前端轮询此接口查询分析进度
-     */
-    @GetMapping("/files/{fileId}/analysis")
-    public ResponseEntity<ApiResponse<?>> getAnalysisResult(
+    }
+
+    @PutMapping("/files/{fileId}/analysis")
+    public ResponseEntity<ApiResponse<?>> updateAnalysisResult(
             @PathVariable Long fileId,
+            @RequestBody Map<String, Object> requestBody,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // 验证认证信息
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
@@ -217,8 +228,61 @@ public class DataUploadController {    @Autowired
                     .body(ApiResponse.unauthorized("无效的认证令牌"));
             }
 
-            // 从数据库查询文件分析状态
-            Map<String, Object> analysisData = projectService.getFileAnalysisStatus(fileId);
+            String confirmedData = (String) requestBody.get("confirmedData");
+            if (confirmedData == null || confirmedData.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.badRequest("confirmedData is required"));
+            }
+
+            String fileType = (String) requestBody.getOrDefault("fileType", "file");
+
+            if ("image".equals(fileType)) {
+                projectService.saveImageConfirmedData(fileId, confirmedData);
+            } else {
+                projectService.saveFileConfirmedData(fileId, confirmedData);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("fileId", fileId);
+            result.put("status", "CONFIRMED");
+
+            return ResponseEntity.ok(ApiResponse.success("确认保存成功", result));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.badRequest(e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取文件分析结果
+     * GET /api/v1/files/{fileId}/analysis
+     * 前端轮询此接口查询分析进度
+     */
+    @GetMapping("/files/{fileId}/analysis")
+    public ResponseEntity<ApiResponse<?>> getAnalysisResult(
+            @PathVariable Long fileId,
+            @RequestParam(value = "fileType", required = false, defaultValue = "file") String fileType,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+            }
+
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+            }
+
+            Map<String, Object> analysisData;
+
+            if ("image".equals(fileType)) {
+                analysisData = projectService.getImageAnalysisStatus(fileId);
+            } else {
+                analysisData = projectService.getFileAnalysisStatus(fileId);
+            }
 
             if (analysisData == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -228,21 +292,25 @@ public class DataUploadController {    @Autowired
             String status = (String) analysisData.get("status");
             Map<String, Object> result = new HashMap<>();
             result.put("fileId", fileId);
+            result.put("fileType", fileType);
             result.put("status", status);
 
-            // 如果分析完成，返回分析数据（19个机器学习特征）
             if ("COMPLETED".equals(status)) {
                 result.put("summary", analysisData.get("summary"));
                 result.put("tableData", analysisData.get("tableData"));
+                result.put("keywords", analysisData.get("keywords"));
+                result.put("data_description", analysisData.get("data_description"));
+                result.put("standardized_name", analysisData.get("standardized_name"));
+                result.put("analysisData", analysisData.get("analysisData"));
+                result.put("confirmedData", analysisData.get("confirmedData"));
+                result.put("isConfirmed", analysisData.get("isConfirmed"));
                 return ResponseEntity.ok(ApiResponse.success("分析完成", result));
             }
-            // 如果分析中，返回处理中状态
             if ("PROCESSING".equals(status)) {
                 result.put("summary", null);
                 result.put("tableData", null);
                 return ResponseEntity.ok(ApiResponse.success("AI 正在读取文献并提取特征...", result));
             }
-            // 如果分析失败
             if ("FAILED".equals(status)) {
                 result.put("errorReason", analysisData.get("errorReason"));
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -264,9 +332,9 @@ public class DataUploadController {    @Autowired
     @GetMapping("/files/{fileId}/analysis/download")
     public ResponseEntity<?> downloadAnalysisResult(
             @PathVariable Long fileId,
+            @RequestParam(value = "fileType", required = false, defaultValue = "file") String fileType,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // 验证认证信息
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
@@ -278,8 +346,12 @@ public class DataUploadController {    @Autowired
                     .body(ApiResponse.unauthorized("无效的认证令牌"));
             }
 
-            // 从数据库查询文件分析结果
-            Map<String, Object> analysisData = projectService.getFileAnalysisStatus(fileId);
+            Map<String, Object> analysisData;
+            if ("image".equals(fileType)) {
+                analysisData = projectService.getImageAnalysisStatus(fileId);
+            } else {
+                analysisData = projectService.getFileAnalysisStatus(fileId);
+            }
 
             if (analysisData == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -288,7 +360,6 @@ public class DataUploadController {    @Autowired
 
             String status = (String) analysisData.get("status");
             
-            // 只有完成状态才能下载
             if ("COMPLETED".equals(status)) {
                 Map<String, Object> downloadData = new HashMap<>();
                 downloadData.put("fileId", fileId);
@@ -310,7 +381,8 @@ public class DataUploadController {    @Autowired
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.badRequest("文件还未开始分析，请先请求分析"));
-            }        } catch (RuntimeException e) {
+            }
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.serverError("下载失败: " + e.getMessage()));
         }
@@ -324,9 +396,9 @@ public class DataUploadController {    @Autowired
     @GetMapping("/files/{fileId}/analysis/export-excel")
     public ResponseEntity<?> exportAnalysisToExcel(
             @PathVariable Long fileId,
+            @RequestParam(value = "fileType", required = false, defaultValue = "file") String fileType,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // 验证认证信息
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
@@ -338,18 +410,29 @@ public class DataUploadController {    @Autowired
                     .body(ApiResponse.unauthorized("无效的认证令牌"));
             }
 
-            // 从数据库查询文件分析结果
-            Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
-            if (!fileOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.notFound("文件不存在"));
+            String analysisStatus;
+            String analysisData;
+
+            if ("image".equals(fileType)) {
+                Optional<ImageInfo> imgOpt = imageInfoRepository.findById(fileId);
+                if (!imgOpt.isPresent()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("图片不存在"));
+                }
+                ImageInfo imageInfo = imgOpt.get();
+                analysisStatus = imageInfo.getAnalysisStatus();
+                analysisData = imageInfo.getAnalysisData();
+            } else {
+                Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
+                if (!fileOpt.isPresent()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("文件不存在"));
+                }
+                FileInfo fileInfo = fileOpt.get();
+                analysisStatus = fileInfo.getAnalysisStatus();
+                analysisData = fileInfo.getAnalysisData();
             }
 
-            FileInfo fileInfo = fileOpt.get();
-            String analysisStatus = fileInfo.getAnalysisStatus();
-            String analysisData = fileInfo.getAnalysisData();
-
-            // 只有完成状态才能导出
             if (analysisStatus == null || !"COMPLETED".equals(analysisStatus)) {
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(ApiResponse.fail(202, "分析尚未完成，状态: " + analysisStatus, null));
@@ -360,11 +443,9 @@ public class DataUploadController {    @Autowired
                     .body(ApiResponse.badRequest("分析数据为空"));
             }
 
-            // 生成 Excel 文件
             String excelFileName = "analysis_" + fileId + "_" + System.currentTimeMillis() + ".xlsx";
             String excelPath = uploadBasePath + "/exports/" + excelFileName;
             
-            // 调用数据处理服务生成 Excel
             String generatedPath = dataProcessingService.processAndGenerateExcel(analysisData, excelPath);
             
             if (generatedPath == null) {
@@ -372,11 +453,9 @@ public class DataUploadController {    @Autowired
                     .body(ApiResponse.serverError("Excel 生成失败"));
             }
 
-            // 读取 Excel 文件内容
             Path filePath = Paths.get(generatedPath);
             byte[] fileContent = Files.readAllBytes(filePath);
 
-            // 返回 Excel 文件供下载
             return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"" + excelFileName + "\"")
                 .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

@@ -330,8 +330,6 @@ const createProject = async () => {
       }
       
       // etc.
-      alert("The project creation and file upload tasks have been completed!");
-
       showCreateModal.value = false;
       fetchProjects(); // flash
 

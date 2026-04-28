@@ -3,12 +3,11 @@ package chem_data_platform.demo.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * 图片信息实体
- */
 @Entity
 @Table(name = "image_infos")
-public class ImageInfo {    @Id
+public class ImageInfo {
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "image_id")
     private Long imageId;
@@ -28,7 +27,24 @@ public class ImageInfo {    @Id
     @Column(name = "uploader_id", nullable = false)
     private Long uploaderId;
 
-    // Getters and Setters
+    @Column(name = "analysis_status", nullable = true, length = 50)
+    private String analysisStatus = "PENDING";
+
+    @Column(name = "analysis_data", nullable = true, columnDefinition = "TEXT")
+    private String analysisData;
+
+    @Column(name = "confirmed_data", nullable = true, columnDefinition = "TEXT")
+    private String confirmedData;
+
+    @Column(name = "analysis_start_time", nullable = true)
+    private LocalDateTime analysisStartTime;
+
+    @Column(name = "analysis_end_time", nullable = true)
+    private LocalDateTime analysisEndTime;
+
+    @Column(name = "analysis_error_reason", nullable = true, length = 500)
+    private String analysisErrorReason;
+
     public Long getImageId() {
         return imageId;
     }
@@ -63,7 +79,9 @@ public class ImageInfo {    @Id
 
     public LocalDateTime getUploadTimestamp() {
         return uploadTimestamp;
-    }    public void setUploadTimestamp(LocalDateTime uploadTimestamp) {
+    }
+
+    public void setUploadTimestamp(LocalDateTime uploadTimestamp) {
         this.uploadTimestamp = uploadTimestamp;
     }
 
@@ -73,5 +91,53 @@ public class ImageInfo {    @Id
 
     public void setUploaderId(Long uploaderId) {
         this.uploaderId = uploaderId;
+    }
+
+    public String getAnalysisStatus() {
+        return analysisStatus;
+    }
+
+    public void setAnalysisStatus(String analysisStatus) {
+        this.analysisStatus = analysisStatus;
+    }
+
+    public String getAnalysisData() {
+        return analysisData;
+    }
+
+    public void setAnalysisData(String analysisData) {
+        this.analysisData = analysisData;
+    }
+
+    public LocalDateTime getAnalysisStartTime() {
+        return analysisStartTime;
+    }
+
+    public void setAnalysisStartTime(LocalDateTime analysisStartTime) {
+        this.analysisStartTime = analysisStartTime;
+    }
+
+    public LocalDateTime getAnalysisEndTime() {
+        return analysisEndTime;
+    }
+
+    public void setAnalysisEndTime(LocalDateTime analysisEndTime) {
+        this.analysisEndTime = analysisEndTime;
+    }
+
+    public String getAnalysisErrorReason() {
+        return analysisErrorReason;
+    }
+
+    public void setAnalysisErrorReason(String analysisErrorReason) {
+        this.analysisErrorReason = analysisErrorReason;
+    }
+
+    public String getConfirmedData() {
+        return confirmedData;
+    }
+
+    public void setConfirmedData(String confirmedData) {
+        this.confirmedData = confirmedData;
     }
 }
