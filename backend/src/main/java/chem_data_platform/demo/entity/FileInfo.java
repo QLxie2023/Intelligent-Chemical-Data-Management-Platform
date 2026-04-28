@@ -52,7 +52,10 @@ public class FileInfo {
     private String analysisStatus = "PENDING"; // PENDING, PROCESSING, COMPLETED, FAILED
 
     @Column(name = "analysis_data", nullable = true, columnDefinition = "TEXT")
-    private String analysisData; // JSON format: {summary, tableData: [...]}
+    private String analysisData;
+
+    @Column(name = "confirmed_data", nullable = true, columnDefinition = "TEXT")
+    private String confirmedData;
 
     @Column(name = "analysis_start_time", nullable = true)
     private LocalDateTime analysisStartTime;
@@ -198,5 +201,13 @@ public class FileInfo {
 
     public void setAnalysisErrorReason(String analysisErrorReason) {
         this.analysisErrorReason = analysisErrorReason;
+    }
+
+    public String getConfirmedData() {
+        return confirmedData;
+    }
+
+    public void setConfirmedData(String confirmedData) {
+        this.confirmedData = confirmedData;
     }
 }

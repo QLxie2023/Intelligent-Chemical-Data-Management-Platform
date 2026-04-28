@@ -1,17 +1,13 @@
 <template>
   <div class="p-8">
-    <!-- Back button -->
     <button @click="router.back()" class="text-blue-600 hover:underline mb-4">
       ← Return to project list
     </button>
 
-    <!-- Loading / error / empty states -->
     <div v-if="loading" class="text-lg text-gray-500">Loading project details...</div>
     <div v-else-if="error" class="text-red-600">Load error: {{ error }}</div>
 
-    <!-- Main content -->
     <div v-else-if="project" class="bg-white rounded-xl shadow-xl p-6">
-      <!-- Project header -->
       <h1 class="text-4xl font-bold text-blue-800 mb-2">{{ project.name }}</h1>
       <p class="text-gray-600 mb-6">
         Project ID: <span class="font-mono">{{ project.projectId }}</span> |
@@ -22,17 +18,14 @@
         </span>
       </p>
 
-      <!-- Description -->
       <div class="border-t pt-4">
         <h2 class="text-2xl font-semibold mb-2">Project Description</h2>
         <p class="text-gray-800 leading-relaxed">{{ project.description }}</p>
       </div>
 
-      <!-- Upload section -->
       <div class="mt-10 border-t pt-6">
         <h2 class="text-2xl font-semibold mb-4">Upload Project Files</h2>
 
-        <!-- Document upload -->
         <div class="mb-4">
           <p class="font-semibold mb-1">Upload document (.pdf / .docx)</p>
           <input type="file" ref="fileUploadInput" @change="handleFileSelect" />
@@ -42,10 +35,9 @@
           >
             Upload Document
           </button>
-          <p v-if="fileMsg" class="mt-2 text-sm">{{ fileMsg }}</p>
+          <p v-if="fileMsg" class="mt-2 text-sm" :class="fileMsg.includes('successful') ? 'text-green-600' : 'text-gray-600'">{{ fileMsg }}</p>
         </div>
 
-        <!-- Image upload -->
         <div class="mb-4">
           <p class="font-semibold mb-1">Upload image (.jpg / .png)</p>
           <input type="file" ref="imageUploadInput" @change="handleImageSelect" />
@@ -55,11 +47,10 @@
           >
             Upload Image
           </button>
-          <p v-if="imageMsg" class="mt-2 text-sm">{{ imageMsg }}</p>
+          <p v-if="imageMsg" class="mt-2 text-sm" :class="imageMsg.includes('successful') ? 'text-green-600' : 'text-gray-600'">{{ imageMsg }}</p>
         </div>
       </div>
 
-      <!-- File list -->
       <div class="mt-10 border-t pt-6">
         <h2 class="text-2xl font-semibold mb-4">Uploaded Files</h2>
 
@@ -75,25 +66,22 @@
             <p class="font-semibold text-blue-700">{{ file.fileName || file.imageName }}</p>
             <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
             <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
-            <p class="text-xs text-gray-400">Uploader: {{ file.uploaderUsername || 'Unknown' }}</p>
-            
-            <!-- Delete button -->
-            <button
-              v-if="canDelete(file)"
-              @click.stop="deleteFile(file)"
-              class="absolute top-2 right-2 text-red-500 hover:text-red-700 transition"
-              title="Delete file"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-              </svg>
-            </button>
+            <span
+              v-if="file._analysisStatus === 'PROCESSING'"
+              class="absolute top-2 right-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full"
+            >Analyzing...</span>
+            <span
+              v-else-if="file._analysisStatus === 'COMPLETED'"
+              class="absolute top-2 right-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full"
+            >Analyzed</span>
+            <span
+              v-else-if="file._analysisStatus === 'FAILED'"
+              class="absolute top-2 right-2 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full"
+            >Failed</span>
           </div>
         </div>
       </div>
 
-      <!-- Knowledge Graph -->
       <div class="mt-10 border-t pt-6">
         <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">
           Knowledge Graph Visualization
@@ -115,155 +103,237 @@
         v-if="previewUrl"
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       >
-        <div class="bg-white p-4 rounded-xl w-3/4 h-3/4 relative shadow-xl">
+        <div class="bg-white p-4 rounded-xl w-3/4 h-3/4 relative shadow-xl flex flex-col">
           <button
-            @click="previewUrl = ''"
-            class="absolute top-3 right-3 px-3 py-1 bg-red-500 text-white rounded-lg"
+            @click="closePreview"
+            class="absolute top-3 right-3 px-3 py-1 bg-red-500 text-white rounded-lg z-50"
           >
             ✕ Close
           </button>
 
-          <!-- Bottom-right action buttons -->
-          <div class="absolute bottom-4 right-4 flex gap-3 z-50">
-            <!-- AI analysis -->
-            <button
-              v-if="currentPreviewFile && currentPreviewFile.fileId"
-              @click="startAIAnalysis"
-              :disabled="analyzing"
-              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-            >
-              {{ analyzing ? 'Analyzing...' : 'AI Smart Analysis' }}
-            </button>
+          <!-- Main content area: split into preview + analysis -->
+          <div class="flex flex-1 min-h-0 mt-8">
+            <!-- Left: file preview -->
+            <div class="w-1/2 pr-2 overflow-auto">
+              <iframe
+                v-if="previewType.includes('pdf')"
+                :src="previewUrl"
+                class="w-full h-full"
+              ></iframe>
+              <img
+                v-else-if="previewType.includes('image')"
+                :src="previewUrl"
+                class="max-w-full max-h-full mx-auto"
+              />
+            </div>
 
-            <!-- View knowledge graph -->
-            <button
-              v-if="analysisStatus === 'COMPLETED'"
-              @click="loadKnowledgeGraph"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              View Knowledge Graph
-            </button>
+            <!-- Right: AI analysis results (editable) -->
+            <div class="w-1/2 pl-2 border-l overflow-auto">
+              <!-- Processing state -->
+              <div v-if="analysisStatus === 'PROCESSING'" class="flex flex-col items-center justify-center h-full">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+                <p class="text-purple-700 font-semibold">AI is analyzing the file, please wait...</p>
+                <p class="text-sm text-gray-500 mt-2">{{ analysisMsg }}</p>
+              </div>
 
-            <!-- Download report -->
-            <button
-              v-if="analysisStatus === 'COMPLETED'"
-              @click="downloadAnalysisExcel"
-              class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-            >
-              Download Report
-            </button>
-          </div>
+              <!-- Failed state -->
+              <div v-else-if="analysisStatus === 'FAILED'" class="flex flex-col items-center justify-center h-full">
+                <p class="text-red-600 font-semibold text-lg mb-2">Analysis Failed</p>
+                <p class="text-sm text-gray-500">{{ analysisMsg }}</p>
+              </div>
 
-          <!-- Knowledge graph panel (inside modal) -->
-          <div v-if="showGraph" class="mt-4 border-t pt-4">
-            <h3 class="text-lg font-semibold mb-2">Knowledge Graph</h3>
-            <div v-if="graphData" class="border rounded-lg p-4 max-h-[500px] overflow-auto">
-              <h4 class="font-semibold mb-2">Nodes (Entities)</h4>
-              <ul class="list-disc pl-5 text-sm text-gray-700 mb-4">
-                <li v-for="node in graphData.nodes" :key="node.id">
-                  {{ node.id }} <span class="text-gray-400">({{ node.type }})</span>
-                </li>
-              </ul>
+              <!-- PENDING state -->
+              <div v-else-if="analysisStatus === 'PENDING'" class="flex flex-col items-center justify-center h-full">
+                <p class="text-gray-500">Analysis not started yet.</p>
+              </div>
 
-              <h4 class="font-semibold mb-2">Relations</h4>
-              <ul class="list-disc pl-5 text-sm text-gray-700">
-                <li v-for="(edge, index) in graphData.edges" :key="index">
-                  {{ edge.source }}
-                  <span class="text-blue-600 font-semibold">
-                    — {{ edge.relation }} →
-                  </span>
-                  {{ edge.target }}
-                </li>
-              </ul>
+              <!-- COMPLETED state: editable form -->
+              <div v-else-if="analysisStatus === 'COMPLETED'" class="p-4">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-lg font-semibold text-purple-800">AI Analysis Results</h3>
+                  <span class="text-xs text-gray-400">You can edit the results below</span>
+                </div>
+
+                <!-- Standardized Name -->
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">Standardized Name</label>
+                  <input
+                    v-model="editForm.standardizedName"
+                    type="text"
+                    class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                  />
+                </div>
+
+                <!-- Summary -->
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">Summary</label>
+                  <textarea
+                    v-model="editForm.summary"
+                    rows="4"
+                    class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                  ></textarea>
+                </div>
+
+                <!-- Data Description -->
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">Data Description</label>
+                  <textarea
+                    v-model="editForm.dataDescription"
+                    rows="3"
+                    class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                  ></textarea>
+                </div>
+
+                <!-- Keywords -->
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">Keywords</label>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span
+                      v-for="(kw, idx) in editForm.keywords"
+                      :key="idx"
+                      class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                    >
+                      {{ kw }}
+                      <button @click="removeKeyword(idx)" class="ml-1 text-purple-500 hover:text-red-500">&times;</button>
+                    </span>
+                  </div>
+                  <div class="flex gap-2">
+                    <input
+                      v-model="newKeyword"
+                      @keyup.enter="addKeyword"
+                      type="text"
+                      placeholder="Add keyword"
+                      class="flex-1 px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                    />
+                    <button @click="addKeyword" class="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200">Add</button>
+                  </div>
+                </div>
+
+                <!-- Table Data (structured feature data) -->
+                <div class="mb-4" v-if="editForm.tableData.length > 0">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">Structured Feature Data</label>
+                  <div class="overflow-auto max-h-64 border rounded-lg">
+                    <table class="min-w-full text-sm border-collapse">
+                      <thead class="bg-gray-100 sticky top-0">
+                        <tr>
+                          <th
+                            v-for="key in tableHeaders"
+                            :key="key"
+                            class="px-3 py-2 border text-left font-semibold"
+                          >
+                            {{ key }}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="(row, index) in editForm.tableData" :key="index">
+                          <td
+                            v-for="key in tableHeaders"
+                            :key="key"
+                            class="px-2 py-1 border"
+                          >
+                            <input
+                              v-model="editForm.tableData[index][key]"
+                              class="w-full px-1 py-0.5 border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-purple-400 focus:outline-none text-sm"
+                            />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Save button -->
+                <div class="flex gap-3 mt-4">
+                  <button
+                    @click="saveAnalysisResult"
+                    :disabled="saving"
+                    :class="editForm.isConfirmed
+                      ? 'px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition'
+                      : 'px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition'"
+                  >
+                    {{ saving ? 'Saving...' : (editForm.isConfirmed ? 'Update Confirmed Results' : 'Confirm & Save Results') }}
+                  </button>
+                  <button
+                    @click="reAnalyze(currentFileId)"
+                    :disabled="analysisStatus === 'PROCESSING'"
+                    class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
+                  >
+                    Re-analyze
+                  </button>
+                  <button
+                    @click="downloadAnalysisExcel"
+                    class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+                  >
+                    Download Report
+                  </button>
+                  <button
+                    @click="loadKnowledgeGraph"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    View Knowledge Graph
+                  </button>
+                </div>
+
+                <!-- Save status message -->
+                <p v-if="saveMsg" class="mt-2 text-sm" :class="saveMsg.includes('success') ? 'text-green-600' : 'text-red-600'">
+                  {{ saveMsg }}
+                </p>
+
+                <!-- Knowledge graph panel -->
+                <div v-if="showGraph" class="mt-4 border-t pt-4">
+                  <h4 class="font-semibold mb-2">Knowledge Graph</h4>
+                  <div v-if="graphData" class="border rounded-lg p-4 max-h-[300px] overflow-auto">
+                    <p class="font-semibold mb-1 text-sm">Nodes (Entities)</p>
+                    <ul class="list-disc pl-5 text-sm text-gray-700 mb-3">
+                      <li v-for="node in graphData.nodes" :key="node.id">
+                        {{ node.id }} <span class="text-gray-400">({{ node.type }})</span>
+                      </li>
+                    </ul>
+                    <p class="font-semibold mb-1 text-sm">Relations</p>
+                    <ul class="list-disc pl-5 text-sm text-gray-700">
+                      <li v-for="(edge, index) in graphData.edges" :key="index">
+                        {{ edge.source }}
+                        <span class="text-blue-600 font-semibold">— {{ edge.relation }} →</span>
+                        {{ edge.target }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No status yet -->
+              <div v-else class="flex flex-col items-center justify-center h-full">
+                <p class="text-gray-400">Click a file to view analysis results</p>
+              </div>
             </div>
           </div>
-
-          <!-- AI status message -->
-          <p
-            v-if="analysisMsg"
-            class="absolute bottom-4 left-4 text-sm font-bold text-purple-700 z-50 bg-white bg-opacity-80 px-2 py-1 rounded shadow-sm"
-          >
-            {{ analysisMsg }}
-          </p>
-
-          <!-- AI results -->
-          <div v-if="analysisStatus === 'COMPLETED'" class="mt-4 p-4 border-t">
-            <h3 class="text-lg font-semibold mb-2">AI Literature Summary</h3>
-            <p class="text-gray-700 mb-4 leading-relaxed">
-              {{ analysisSummary }}
-            </p>
-
-            <h3 class="text-lg font-semibold mb-2">Structured Feature Data</h3>
-            <div class="overflow-auto max-h-64 border rounded-lg">
-              <table class="min-w-full text-sm border-collapse">
-                <thead class="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th
-                      v-for="(value, key) in analysisTableData[0]"
-                      :key="key"
-                      class="px-3 py-2 border text-left font-semibold"
-                    >
-                      {{ key }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, index) in analysisTableData" :key="index">
-                    <td
-                      v-for="(value, key) in row"
-                      :key="key"
-                      class="px-3 py-2 border"
-                    >
-                      {{ value }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- File preview -->
-          <iframe
-            v-if="previewType.includes('pdf') && analysisStatus !== 'COMPLETED'"
-            :src="previewUrl"
-            class="w-full h-full"
-          ></iframe>
-
-          <img
-            v-else-if="previewType.includes('image')"
-            :src="previewUrl"
-            class="max-w-full max-h-full mx-auto"
-          />
         </div>
       </div>
     </div>
 
-    <!-- Empty project -->
     <div v-else class="text-lg text-gray-500">Project data is empty.</div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import request from '../utils/request';
 
-/* ---------- reactive refs ---------- */
 const route = useRoute();
 const router = useRouter();
 const projectId = route.params.id;
 
 const project = ref(null);
-const files = ref([]); // merged files & images
+const files = ref([]);
 const loading = ref(true);
 const error = ref('');
 
-/* preview */
 const previewUrl = ref('');
 const previewType = ref('');
 const currentBlobUrl = ref('');
 
-/* upload */
 const selectedFile = ref(null);
 const selectedImage = ref(null);
 const fileMsg = ref('');
@@ -271,21 +341,38 @@ const imageMsg = ref('');
 const fileUploadInput = ref(null);
 const imageUploadInput = ref(null);
 
-/* AI analysis */
-const analyzing = ref(false);
 const analysisMsg = ref('');
 const currentPreviewFile = ref(null);
+const currentFileId = ref(null);
+const currentFileType = ref('file');
 
-const analysisStatus = ref(''); // PROCESSING | COMPLETED | FAILED
-const analysisSummary = ref('');
-const analysisTableData = ref([]);
-let analysisTimer = null;
+const analysisStatus = ref('');
+const saving = ref(false);
+const saveMsg = ref('');
 
-/* knowledge graph */
+const editForm = ref({
+  summary: '',
+  standardizedName: '',
+  dataDescription: '',
+  keywords: [],
+  tableData: [],
+  rawAnalysisData: ''
+});
+
+const newKeyword = ref('');
+
 const graphData = ref(null);
 const showGraph = ref(false);
 
-/* ---------- methods ---------- */
+let analysisTimer = null;
+
+const tableHeaders = computed(() => {
+  if (editForm.value.tableData.length > 0) {
+    return Object.keys(editForm.value.tableData[0]);
+  }
+  return [];
+});
+
 async function fetchProjectDetail() {
   try {
     const res = await request.get(`/projects/${projectId}`);
@@ -299,34 +386,54 @@ async function fetchProjectDetail() {
   }
 }
 
-/* fetch files & images with isolated error handling */
 async function fetchFiles() {
   files.value = [];
 
-  /* files */
   try {
     const res = await request.get(`/projects/${projectId}/files`);
-    if (res.code === 200 && res.data) files.value.push(...res.data);
-    else console.warn('File list failed (non-200):', res.message);
+    if (res.code === 200 && res.data) {
+      const fileItems = res.data.map(f => ({ ...f, _analysisStatus: null }));
+      files.value.push(...fileItems);
+      fileItems.forEach(f => checkFileAnalysisStatus(f, f.fileId));
+    }
   } catch (err) {
     console.error(`File list API error: ${err.message}`);
   }
 
-  /* images */
   try {
     const img = await request.get(`/projects/${projectId}/images`);
-    if (img.code === 200 && img.data) files.value.push(...img.data);
-    else console.warn('Image list failed (non-200):', img.message);
+    if (img.code === 200 && img.data) {
+      const imageItems = img.data.map(i => ({ ...i, _analysisStatus: null }));
+      files.value.push(...imageItems);
+      imageItems.forEach(i => checkFileAnalysisStatus(i, i.imageId));
+    }
   } catch (err) {
     console.error(`Image list API error: ${err.message}`);
   }
 }
 
-/* open preview with blob URL to keep auth header */
+async function checkFileAnalysisStatus(fileItem, fileId) {
+  try {
+    const ft = fileItem.fileType ? 'file' : 'image';
+    const res = await request.get(`/files/${fileId}/analysis?fileType=${ft}`);
+    if (res.code === 200 && res.data) {
+      fileItem._analysisStatus = res.data.status;
+    }
+  } catch {
+    fileItem._analysisStatus = null;
+  }
+}
+
 async function openPreview(file) {
   currentPreviewFile.value = file;
+  currentFileId.value = file.fileId || file.imageId;
+  currentFileType.value = file.fileType ? 'file' : 'image';
+  analysisStatus.value = '';
+  analysisMsg.value = '';
+  saveMsg.value = '';
+  showGraph.value = false;
+  resetEditForm();
 
-  /* revoke previous blob URL */
   if (currentBlobUrl.value) {
     URL.revokeObjectURL(currentBlobUrl.value);
     currentBlobUrl.value = '';
@@ -336,7 +443,6 @@ async function openPreview(file) {
   let type = file.fileType || 'image';
   let fullApiUrl = relativeUrl;
 
-  /* build full URL */
   if (relativeUrl && !relativeUrl.startsWith('http') && !relativeUrl.startsWith('/api/v1')) {
     fullApiUrl = `${relativeUrl}`;
   }
@@ -358,26 +464,217 @@ async function openPreview(file) {
       previewType.value = 'unsupported';
     }
   } catch (err) {
-    console.error(`File load failed (403/auth): ${fullApiUrl}`, err);
+    console.error(`File load failed: ${fullApiUrl}`, err);
     previewUrl.value = fullApiUrl;
     previewType.value = 'unsupported';
   }
+
+  await loadAnalysisResults(currentFileId.value);
 }
 
-/* release blob memory when modal closed */
-watch(previewUrl, (newVal) => {
-  if (!newVal && currentBlobUrl.value) {
-    URL.revokeObjectURL(currentBlobUrl.value);
-    currentBlobUrl.value = '';
-    console.log('Blob memory released');
+function closePreview() {
+  previewUrl.value = '';
+  stopPolling();
+}
+
+function resetEditForm() {
+  editForm.value = {
+    summary: '',
+    standardizedName: '',
+    dataDescription: '',
+    keywords: [],
+    tableData: [],
+    rawAnalysisData: '',
+    isConfirmed: false
+  };
+}
+
+async function loadAnalysisResults(fileId) {
+  try {
+    const ft = currentFileType.value || 'file';
+    const res = await request.get(`/files/${fileId}/analysis?fileType=${ft}`);
+    if (res.code !== 200 || !res.data) {
+      analysisStatus.value = '';
+      return;
+    }
+
+    const data = res.data;
+    analysisStatus.value = data.status;
+
+    if (data.fileType) {
+      currentFileType.value = data.fileType;
+    }
+
+    if (data.status === 'COMPLETED') {
+      editForm.value.summary = data.summary || '';
+      editForm.value.standardizedName = data.standardized_name || '';
+      editForm.value.dataDescription = data.data_description || '';
+      editForm.value.keywords = Array.isArray(data.keywords) ? [...data.keywords] : [];
+      editForm.value.tableData = Array.isArray(data.tableData) ? JSON.parse(JSON.stringify(data.tableData)) : [];
+      editForm.value.rawAnalysisData = data.analysisData || '';
+      editForm.value.isConfirmed = data.isConfirmed || false;
+      analysisMsg.value = data.isConfirmed
+        ? 'Results confirmed and saved. You can still edit and re-save.'
+        : 'AI analysis completed. You can review and edit the results.';
+    } else if (data.status === 'PROCESSING') {
+      analysisMsg.value = 'AI is analyzing the file, please wait...';
+      startPolling(fileId);
+    } else if (data.status === 'FAILED') {
+      analysisMsg.value = data.errorReason || 'AI analysis failed';
+    } else if (data.status === 'PENDING') {
+      analysisMsg.value = 'Triggering AI analysis...';
+      await triggerAnalysis(fileId);
+    }
+  } catch (err) {
+    console.error('Load analysis error:', err);
+    analysisStatus.value = '';
   }
-  if (!newVal && analysisTimer) {
+}
+
+function startPolling(fileId) {
+  stopPolling();
+  analysisTimer = setInterval(() => pollAnalysisStatus(fileId), 2000);
+}
+
+async function triggerAnalysis(fileId) {
+  try {
+    const res = await request.post(`/files/${fileId}/analysis?fileType=${currentFileType.value || 'file'}`);
+    if (res.code === 200) {
+      analysisStatus.value = 'PROCESSING';
+      analysisMsg.value = 'AI is analyzing the file, please wait...';
+      startPolling(fileId);
+    } else {
+      analysisMsg.value = res.message || 'Failed to start analysis';
+    }
+  } catch (err) {
+    console.error('Trigger analysis error:', err);
+    analysisMsg.value = 'Failed to trigger analysis';
+  }
+}
+
+async function reAnalyze(fileId) {
+  if (!fileId) return;
+  try {
+    editForm.value.summary = '';
+    editForm.value.standardizedName = '';
+    editForm.value.dataDescription = '';
+    editForm.value.keywords = [];
+    editForm.value.tableData = [];
+    editForm.value.isConfirmed = false;
+    analysisStatus.value = 'PROCESSING';
+    analysisMsg.value = 'Re-analyzing with AI, please wait...';
+    const res = await request.post(`/files/${fileId}/analysis?fileType=${currentFileType.value || 'file'}`);
+    if (res.code === 200) {
+      startPolling(fileId);
+    } else {
+      analysisMsg.value = res.message || 'Failed to re-analyze';
+    }
+  } catch (err) {
+    console.error('Re-analyze error:', err);
+    analysisMsg.value = 'Failed to re-analyze';
+  }
+}
+
+async function pollAnalysisStatus(fileId) {
+  try {
+    const ft = currentFileType.value || 'file';
+    const res = await request.get(`/files/${fileId}/analysis?fileType=${ft}`);
+    if (res.code !== 200 || !res.data) return;
+
+    const data = res.data;
+    analysisStatus.value = data.status;
+
+    if (data.fileType) {
+      currentFileType.value = data.fileType;
+    }
+
+    if (data.status === 'PROCESSING') {
+      analysisMsg.value = 'AI is analyzing the file, please wait...';
+    }
+    if (data.status === 'COMPLETED') {
+      editForm.value.summary = data.summary || '';
+      editForm.value.standardizedName = data.standardized_name || '';
+      editForm.value.dataDescription = data.data_description || '';
+      editForm.value.keywords = Array.isArray(data.keywords) ? [...data.keywords] : [];
+      editForm.value.tableData = Array.isArray(data.tableData) ? JSON.parse(JSON.stringify(data.tableData)) : [];
+      editForm.value.rawAnalysisData = data.analysisData || '';
+      editForm.value.isConfirmed = data.isConfirmed || false;
+      analysisMsg.value = data.isConfirmed
+        ? 'Results confirmed and saved. You can still edit and re-save.'
+        : 'AI analysis completed. You can review and edit the results.';
+      stopPolling();
+
+      const fileItem = files.value.find(f => (f.fileId || f.imageId) === fileId);
+      if (fileItem) fileItem._analysisStatus = 'COMPLETED';
+    }
+    if (data.status === 'FAILED') {
+      analysisMsg.value = data.errorReason || 'AI analysis failed';
+      stopPolling();
+
+      const fileItem = files.value.find(f => (f.fileId || f.imageId) === fileId);
+      if (fileItem) fileItem._analysisStatus = 'FAILED';
+    }
+  } catch (err) {
+    console.error('Polling error:', err);
+    stopPolling();
+  }
+}
+
+function stopPolling() {
+  if (analysisTimer) {
     clearInterval(analysisTimer);
     analysisTimer = null;
   }
-});
+}
 
-/* file select handlers */
+function addKeyword() {
+  const kw = newKeyword.value.trim();
+  if (kw && !editForm.value.keywords.includes(kw)) {
+    editForm.value.keywords.push(kw);
+  }
+  newKeyword.value = '';
+}
+
+function removeKeyword(idx) {
+  editForm.value.keywords.splice(idx, 1);
+}
+
+async function saveAnalysisResult() {
+  if (!currentFileId.value) return;
+
+  saving.value = true;
+  saveMsg.value = '';
+
+  try {
+    const confirmedObj = {
+      summary: editForm.value.summary,
+      standardized_name: editForm.value.standardizedName,
+      data_description: editForm.value.dataDescription,
+      keywords: editForm.value.keywords,
+      tableData: editForm.value.tableData
+    };
+
+    const confirmedDataStr = JSON.stringify(confirmedObj);
+
+    const res = await request.put(`/files/${currentFileId.value}/analysis`, {
+      confirmedData: confirmedDataStr,
+      fileType: currentFileType.value
+    });
+
+    if (res.code === 200) {
+      saveMsg.value = 'Results confirmed and saved successfully!';
+      editForm.value.isConfirmed = true;
+    } else {
+      saveMsg.value = 'Save failed: ' + (res.message || 'Unknown error');
+    }
+  } catch (err) {
+    console.error('Save error:', err);
+    saveMsg.value = 'Save failed: server error';
+  } finally {
+    saving.value = false;
+  }
+}
+
 function handleFileSelect(e) {
   selectedFile.value = e.target.files[0];
 }
@@ -385,7 +682,6 @@ function handleImageSelect(e) {
   selectedImage.value = e.target.files[0];
 }
 
-/* upload handlers */
 async function uploadFile() {
   if (!selectedFile.value) {
     fileMsg.value = 'Please select a file first.';
@@ -397,9 +693,23 @@ async function uploadFile() {
   try {
     const res = await request.post(`/projects/${projectId}/files`, form);
     if (res.code === 200) {
-      fileMsg.value = 'Upload successful!';
+      fileMsg.value = 'Upload successful! AI is analyzing automatically...';
       selectedFile.value = null;
       if (fileUploadInput.value) fileUploadInput.value.value = '';
+
+      if (res.data && res.data.fileId) {
+        currentPreviewFile.value = {
+          fileId: res.data.fileId,
+          fileName: res.data.fileName || 'Uploaded file',
+          fileType: res.data.fileType || 'file'
+        };
+        currentFileId.value = res.data.fileId;
+        currentFileType.value = 'file';
+        analysisStatus.value = 'PROCESSING';
+        analysisMsg.value = 'AI is analyzing the file, please wait...';
+        startPolling(res.data.fileId);
+      }
+
       fetchFiles();
     } else {
       fileMsg.value = 'Upload failed. ' + res.message;
@@ -421,9 +731,23 @@ async function uploadImage() {
   try {
     const res = await request.post(`/projects/${projectId}/images`, form);
     if (res.code === 200) {
-      imageMsg.value = 'Upload successful!';
+      imageMsg.value = 'Upload successful! AI is analyzing automatically...';
       selectedImage.value = null;
       if (imageUploadInput.value) imageUploadInput.value.value = '';
+
+      if (res.data && res.data.imageId) {
+        currentPreviewFile.value = {
+          fileId: res.data.imageId,
+          fileName: res.data.imageName || 'Uploaded image',
+          fileType: 'image'
+        };
+        currentFileId.value = res.data.imageId;
+        currentFileType.value = 'image';
+        analysisStatus.value = 'PROCESSING';
+        analysisMsg.value = 'AI is analyzing the image, please wait...';
+        startPolling(res.data.imageId);
+      }
+
       fetchFiles();
     } else {
       imageMsg.value = 'Upload failed: ' + res.message;
@@ -434,81 +758,15 @@ async function uploadImage() {
   }
 }
 
-/* AI analysis */
-async function startAIAnalysis() {
-  if (!currentPreviewFile.value?.fileId) {
-    analysisMsg.value = 'This file does not support AI analysis.';
-    return;
-  }
-  analyzing.value = true;
-  analysisMsg.value = 'Submitting AI analysis task...';
-  analysisStatus.value = '';
-  analysisSummary.value = '';
-  analysisTableData.value = [];
-
-  try {
-    const res = await request.post(`/files/${currentPreviewFile.value.fileId}/analysis`);
-    if (res.code === 200) {
-      analysisMsg.value = res.message || 'Task submitted, preparing analysis...';
-      analysisTimer = setInterval(() => pollAnalysisStatus(currentPreviewFile.value.fileId), 2000);
-    } else {
-      analysisMsg.value = res.message || 'Failed to start';
-      analyzing.value = false;
-    }
-  } catch (err) {
-    console.error('AI analysis error:', err);
-    analysisMsg.value = 'Server error, unable to start analysis.';
-    analyzing.value = false;
-  }
-}
-
-async function pollAnalysisStatus(fileId) {
-  try {
-    const res = await request.get(`/files/${fileId}/analysis`);
-    if (res.code !== 200 || !res.data) return;
-
-    analysisStatus.value = res.data.status;
-
-    if (res.data.status === 'PROCESSING') {
-      analysisMsg.value = res.message || 'AI is analyzing the literature, please wait...';
-    }
-    if (res.data.status === 'COMPLETED') {
-      analysisSummary.value = res.data.summary;
-      analysisTableData.value = res.data.tableData || [];
-      analysisMsg.value = '✅ AI analysis completed!';
-      stopPolling();
-    }
-    if (res.data.status === 'FAILED') {
-      analysisMsg.value = res.data.errorReason || '❌ AI analysis failed';
-      stopPolling();
-    }
-  } catch (err) {
-    console.error('Polling error:', err);
-    analysisMsg.value = 'Polling error, please check network';
-    stopPolling();
-  }
-}
-
-function stopPolling() {
-  if (analysisTimer) {
-    clearInterval(analysisTimer);
-    analysisTimer = null;
-  }
-  analyzing.value = false;
-}
-
-/* download Excel report */
 async function downloadAnalysisExcel() {
-  if (!currentPreviewFile.value?.fileId) {
-    analysisMsg.value = 'Cannot download: file not found';
-    return;
-  }
+  if (!currentFileId.value) return;
   try {
+    const ft = currentFileType.value || 'file';
     const response = await request.get(
-      `/files/${currentPreviewFile.value.fileId}/analysis/download`,
+      `/files/${currentFileId.value}/analysis/download?fileType=${ft}`,
       { responseType: 'blob' }
     );
-    let filename = `Analysis_Report_${currentPreviewFile.value.fileId}.xlsx`;
+    let filename = `Analysis_Report_${currentFileId.value}.xlsx`;
     const disposition = response.headers?.['content-disposition'];
     if (disposition && disposition.includes('filename=')) {
       filename = decodeURIComponent(
@@ -524,16 +782,14 @@ async function downloadAnalysisExcel() {
     window.URL.revokeObjectURL(url);
   } catch (err) {
     console.error('Download Excel error:', err);
-    analysisMsg.value =
-      err?.response?.data?.message || 'Download failed, please ensure analysis is complete';
+    saveMsg.value = 'Download failed, please ensure analysis is complete';
   }
 }
 
-/* load knowledge graph */
 async function loadKnowledgeGraph() {
-  if (!currentPreviewFile.value?.fileId) return;
+  if (!currentFileId.value) return;
   try {
-    const res = await request.get(`/api/v1/graphs/${currentPreviewFile.value.fileId}/visualization`);
+    const res = await request.get(`/api/v1/graphs/${currentFileId.value}/visualization`);
     if (res.code === 200 && res.data) {
       graphData.value = res.data;
       showGraph.value = true;
@@ -546,69 +802,19 @@ async function loadKnowledgeGraph() {
   }
 }
 
-/* ---------- methods ---------- */
-// 检查用户是否有权限删除文件
-function canDelete(file) {
-  // 获取当前用户信息
-  const userStr = localStorage.getItem('user');
-  if (!userStr) return false;
-  
-  const user = JSON.parse(userStr);
-  const currentUsername = user.username;
-  
-  // 检查是否是文件上传者
-  if (file.uploaderUsername === currentUsername) {
-    return true;
-  }
-  
-  // 检查是否是项目所有者
-  if (project.value && project.value.ownerUsername === currentUsername) {
-    return true;
-  }
-  
-  return false;
-}
-
-// 删除文件
-async function deleteFile(file) {
-  if (!confirm('确定要删除这个文件吗？')) {
-    return;
-  }
-  
-  try {
-    if (file.fileId) {
-      // 删除文件
-      const res = await request.post(`/files/${file.fileId}/delete`);
-      if (res.code === 200) {
-        alert('文件删除成功');
-        await fetchFiles(); // 重新获取文件列表
-      } else {
-        alert('删除失败: ' + res.message);
-      }
-    } else if (file.imageId) {
-      // 删除图片
-      const res = await request.post(`/images/${file.imageId}/delete`);
-      if (res.code === 200) {
-        alert('图片删除成功');
-        await fetchFiles(); // 重新获取文件列表
-      } else {
-        alert('删除失败: ' + res.message);
-      }
-    }
-  } catch (err) {
-    console.error('删除文件失败:', err);
-    alert('删除失败，请检查网络连接');
-  }
-}
-
-/* ---------- lifecycle ---------- */
 onMounted(async () => {
   await fetchProjectDetail();
   await fetchFiles();
   loading.value = false;
 });
+
+onUnmounted(() => {
+  stopPolling();
+  if (currentBlobUrl.value) {
+    URL.revokeObjectURL(currentBlobUrl.value);
+  }
+});
 </script>
 
 <style scoped>
-/* Add any scoped styles here */
 </style>
