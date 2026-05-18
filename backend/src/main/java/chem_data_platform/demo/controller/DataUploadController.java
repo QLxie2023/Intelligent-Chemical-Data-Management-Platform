@@ -31,6 +31,7 @@ import chem_data_platform.demo.utils.JwtUtil;
 import chem_data_platform.demo.vo.ApiResponse;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.io.File;
@@ -209,6 +210,45 @@ public class DataUploadController {    @Autowired
      */
     private void saveAnalysisErrorSync(Long fileId, String errorMsg) {
         projectService.saveFileAnalysisError(fileId, errorMsg);
+    }
+
+    /**
+     * Save manually entered keywords for spreadsheet files (Excel/CSV).
+     * PUT /api/v1/files/{fileId}/manual-keywords
+     */
+    @PutMapping("/files/{fileId}/manual-keywords")
+    public ResponseEntity<ApiResponse<?>> saveManualKeywords(
+            @PathVariable Long fileId,
+            @RequestBody Map<String, Object> requestBody,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.unauthorized("Invalid or missing token"));
+            }
+            String token = authHeader.substring(7);
+            if (!jwtUtil.isTokenValid(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.unauthorized("Invalid or missing token"));
+            }
+
+            @SuppressWarnings("unchecked")
+            List<String> keywords = (List<String>) requestBody.get("keywords");
+            if (keywords == null || keywords.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.badRequest("keywords is required and must not be empty"));
+            }
+
+            projectService.saveFileManualKeywords(fileId, keywords);
+
+            return ResponseEntity.ok(ApiResponse.success("Keywords saved successfully", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.notFound(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.serverError("Save failed: " + e.getMessage()));
+        }
     }
 
     @PutMapping("/files/{fileId}/analysis")

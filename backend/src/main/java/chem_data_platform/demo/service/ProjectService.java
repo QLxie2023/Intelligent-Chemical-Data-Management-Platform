@@ -588,7 +588,7 @@ public class ProjectService {
             try {
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> analysisDataMap = mapper.readValue(
-                    file.getAnalysisData(), 
+                    file.getAnalysisData(),
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
                 );
                 result.put("summary", analysisDataMap.get("summary"));
@@ -597,7 +597,6 @@ public class ProjectService {
                 result.put("data_description", analysisDataMap.get("data_description"));
                 result.put("standardized_name", analysisDataMap.get("standardized_name"));
                 result.put("analysisData", file.getAnalysisData());
-                result.put("confirmedData", file.getConfirmedData());
             } catch (Exception e) {
                 result.put("summary", file.getAnalysisData());
                 result.put("tableData", null);
@@ -606,6 +605,7 @@ public class ProjectService {
             result.put("summary", null);
             result.put("tableData", null);
         }
+        result.put("confirmedData", file.getConfirmedData());
 
         if ("FAILED".equals(status) && file.getAnalysisErrorReason() != null) {
             result.put("errorReason", file.getAnalysisErrorReason());
@@ -642,6 +642,45 @@ public class ProjectService {
             System.out.println("✅ [DB] 已保存分析结果: fileId=" + fileId + ", 数据长度=" + analysisData.length());
         } else {
             System.err.println("❌ [DB] 文件不存在: fileId=" + fileId);
+        }
+    }
+
+    /**
+     * Save manually entered keywords for spreadsheet files (Excel/CSV).
+     * Merges with existing keywords (deduplicated).
+     */
+    @Transactional
+    public void saveFileManualKeywords(Long fileId, List<String> keywords) {
+        Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
+        if (fileOpt.isPresent()) {
+            FileInfo file = fileOpt.get();
+            try {
+                // Merge with existing keywords
+                java.util.Set<String> merged = new java.util.LinkedHashSet<>();
+                if (file.getConfirmedData() != null && !file.getConfirmedData().isEmpty()) {
+                    JsonNode existing = mapper.readTree(file.getConfirmedData());
+                    if (existing.has("keywords") && existing.get("keywords").isArray()) {
+                        existing.get("keywords").forEach(n -> merged.add(n.asText()));
+                    }
+                }
+                merged.addAll(keywords);
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("keywords", new java.util.ArrayList<>(merged));
+                data.put("standardized_name", "");
+                data.put("summary", "");
+                data.put("data_description", "");
+                data.put("tableData", List.of());
+
+                file.setConfirmedData(mapper.writeValueAsString(data));
+                file.setAnalysisStatus("COMPLETED");
+                file.setAnalysisEndTime(LocalDateTime.now());
+                fileInfoRepository.save(file);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to save keywords", e);
+            }
+        } else {
+            throw new IllegalArgumentException("File not found");
         }
     }
 
@@ -709,7 +748,7 @@ public class ProjectService {
             try {
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> analysisDataMap = mapper.readValue(
-                    image.getAnalysisData(), 
+                    image.getAnalysisData(),
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
                 );
                 result.put("summary", analysisDataMap.get("summary"));
@@ -718,7 +757,6 @@ public class ProjectService {
                 result.put("data_description", analysisDataMap.get("data_description"));
                 result.put("standardized_name", analysisDataMap.get("standardized_name"));
                 result.put("analysisData", image.getAnalysisData());
-                result.put("confirmedData", image.getConfirmedData());
             } catch (Exception e) {
                 result.put("summary", image.getAnalysisData());
                 result.put("tableData", null);
@@ -727,6 +765,7 @@ public class ProjectService {
             result.put("summary", null);
             result.put("tableData", null);
         }
+        result.put("confirmedData", image.getConfirmedData());
 
         if ("FAILED".equals(status) && image.getAnalysisErrorReason() != null) {
             result.put("errorReason", image.getAnalysisErrorReason());
@@ -790,36 +829,39 @@ public class ProjectService {
         Long userId = user.getId();
         String like = "%" + keyword.replace("'", "''") + "%";
 
-        // Search file_infos
+        // Search file_infos (both analysis_data and confirmed_data)
         String fileSql = "SELECT f.file_id, f.file_name, f.project_id, " +
                 "p.name AS project_name, p.visibility, u.username AS owner_username, " +
-                "f.analysis_data " +
+                "f.analysis_data, f.confirmed_data " +
                 "FROM file_infos f " +
                 "JOIN projects p ON f.project_id = p.id " +
                 "JOIN users u ON p.owner_id = u.id " +
                 "WHERE f.analysis_status = 'COMPLETED' " +
                 "AND (p.visibility = 'PUBLIC' OR p.owner_id = ?) " +
-                "AND f.analysis_data LIKE ?";
+                "AND (f.analysis_data LIKE ? OR f.confirmed_data LIKE ?)";
 
-        // Search image_infos
+        // Search image_infos (both analysis_data and confirmed_data)
         String imageSql = "SELECT i.image_id, i.image_name, i.project_id, " +
                 "p.name AS project_name, p.visibility, u.username AS owner_username, " +
-                "i.analysis_data " +
+                "i.analysis_data, i.confirmed_data " +
                 "FROM image_infos i " +
                 "JOIN projects p ON i.project_id = p.id " +
                 "JOIN users u ON p.owner_id = u.id " +
                 "WHERE i.analysis_status = 'COMPLETED' " +
                 "AND (p.visibility = 'PUBLIC' OR p.owner_id = ?) " +
-                "AND i.analysis_data LIKE ?";
+                "AND (i.analysis_data LIKE ? OR i.confirmed_data LIKE ?)";
 
         List<SearchResultDTO> results = new ArrayList<>();
 
         jdbcTemplate.query(fileSql, (rs) -> {
             try {
-                String analysisDataStr = rs.getString("analysis_data");
-                if (analysisDataStr == null || analysisDataStr.isEmpty()) return;
+                String dataStr = rs.getString("analysis_data");
+                if (dataStr == null || dataStr.isEmpty()) {
+                    dataStr = rs.getString("confirmed_data");
+                }
+                if (dataStr == null || dataStr.isEmpty()) return;
 
-                JsonNode root = mapper.readTree(analysisDataStr);
+                JsonNode root = mapper.readTree(dataStr);
                 SearchResultDTO dto = new SearchResultDTO();
                 dto.setProjectId(rs.getLong("project_id"));
                 dto.setProjectName(rs.getString("project_name"));
@@ -839,14 +881,17 @@ public class ProjectService {
                 }
                 results.add(dto);
             } catch (Exception ignored) {}
-        }, userId, like);
+        }, userId, like, like);
 
         jdbcTemplate.query(imageSql, (rs) -> {
             try {
-                String analysisDataStr = rs.getString("analysis_data");
-                if (analysisDataStr == null || analysisDataStr.isEmpty()) return;
+                String dataStr = rs.getString("analysis_data");
+                if (dataStr == null || dataStr.isEmpty()) {
+                    dataStr = rs.getString("confirmed_data");
+                }
+                if (dataStr == null || dataStr.isEmpty()) return;
 
-                JsonNode root = mapper.readTree(analysisDataStr);
+                JsonNode root = mapper.readTree(dataStr);
                 SearchResultDTO dto = new SearchResultDTO();
                 dto.setProjectId(rs.getLong("project_id"));
                 dto.setProjectName(rs.getString("project_name"));
@@ -866,7 +911,7 @@ public class ProjectService {
                 }
                 results.add(dto);
             } catch (Exception ignored) {}
-        }, userId, like);
+        }, userId, like, like);
 
         return results;
     }

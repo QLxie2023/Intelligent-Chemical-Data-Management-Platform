@@ -161,7 +161,7 @@ public class MediaController {
      */
     private MediaType getMediaType(String fileName) {
         String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
-        
+
         switch (extension) {
             case "jpg":
             case "jpeg":
@@ -176,12 +176,15 @@ public class MediaController {
                 return MediaType.APPLICATION_PDF;
             case "txt":
                 return MediaType.TEXT_PLAIN;
+            case "csv":
+                return MediaType.valueOf("text/csv");
             case "doc":
             case "docx":
                 return MediaType.valueOf("application/msword");
             case "xls":
-            case "xlsx":
                 return MediaType.valueOf("application/vnd.ms-excel");
+            case "xlsx":
+                return MediaType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             default:
                 return MediaType.APPLICATION_OCTET_STREAM;
         }

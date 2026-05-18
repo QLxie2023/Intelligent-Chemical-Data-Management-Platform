@@ -202,7 +202,7 @@
         </select>
         
         <div class="mb-4 p-3 border rounded-lg">
-            <p class="font-semibold mb-2">Option: Upload experimental files (.pdf / .docx)</p>
+            <p class="font-semibold mb-2">Option: Upload experimental files (.pdf / .docx / .xlsx / .csv)</p>
             <input type="file" ref="fileInput" @change="selectFile" class="hidden" />
             <button type="button" @click="fileInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition mb-3">Choose File</button>
             <p v-if="fileUploadMsg" :class="fileUploadMsg.includes('fail') ? 'text-red-600' : 'text-green-600'" class="text-sm mt-1">{{ fileUploadMsg }}</p>
