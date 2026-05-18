@@ -21,7 +21,7 @@
           />
         </div>
 
-        <h2 class="text-2xl font-bold mb-6 text-center">用户注册</h2>
+        <h2 class="text-2xl font-bold mb-6 text-center">User Registration</h2>
   
         <div class="space-y-4">
           <input
