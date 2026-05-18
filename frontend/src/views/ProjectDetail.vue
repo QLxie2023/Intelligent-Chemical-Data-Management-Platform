@@ -28,7 +28,8 @@
 
         <div class="mb-4">
           <p class="font-semibold mb-1">Upload document (.pdf / .docx)</p>
-          <input type="file" ref="fileUploadInput" @change="handleFileSelect" />
+          <input type="file" ref="fileUploadInput" @change="handleFileSelect" class="hidden" />
+          <button type="button" @click="fileUploadInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Choose File</button>
           <button
             @click="uploadFile"
             class="ml-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -40,7 +41,8 @@
 
         <div class="mb-4">
           <p class="font-semibold mb-1">Upload image (.jpg / .png)</p>
-          <input type="file" ref="imageUploadInput" @change="handleImageSelect" />
+          <input type="file" ref="imageUploadInput" @change="handleImageSelect" class="hidden" />
+          <button type="button" @click="imageUploadInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Choose Image</button>
           <button
             @click="uploadImage"
             class="ml-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
@@ -920,6 +922,18 @@ onMounted(async () => {
   await fetchProjectDetail();
   await fetchFiles();
   loading.value = false;
+
+  // If navigated from search with a specific fileId/imageId, auto-open its preview
+  const targetFileId = route.query.fileId || route.query.imageId;
+  if (targetFileId) {
+    const target = files.value.find(f =>
+      (f.fileId && String(f.fileId) === String(targetFileId)) ||
+      (f.imageId && String(f.imageId) === String(targetFileId))
+    );
+    if (target) {
+      openPreview(target);
+    }
+  }
 });
 
 onUnmounted(() => {

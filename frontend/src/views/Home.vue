@@ -64,7 +64,78 @@
       </div>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold mb-4">My project list (total {{ projects.length }})</h2>
+        <h2 class="text-xl font-semibold mb-4">Project List (total {{ projects.length }})</h2>
+
+        <!-- Search bar -->
+        <div class="mb-6 flex gap-3">
+          <input
+            v-model="searchKeyword"
+            type="text"
+            placeholder="Search by keyword (e.g., experiment topic, chemical name...)"
+            class="flex-1 px-4 py-2 border rounded-lg"
+            @keyup.enter="performSearch"
+          />
+          <button
+            @click="performSearch"
+            class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Search
+          </button>
+          <button
+            v-if="searchResults.length > 0"
+            @click="clearSearch"
+            class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition"
+          >
+            Clear
+          </button>
+        </div>
+
+        <!-- Search results -->
+        <div v-if="searchResults.length > 0" class="mb-8">
+          <p class="text-sm text-gray-500 mb-3">
+            Found {{ searchResults.length }} result(s) for "{{ searchKeyword }}"
+          </p>
+          <div class="grid gap-4">
+            <div
+              v-for="item in searchResults"
+              :key="(item.fileId || item.imageId)"
+              class="bg-white rounded-xl shadow p-5 hover:shadow-md transition cursor-pointer"
+              @click="goToSearchResult(item)"
+            >
+              <div class="flex justify-between items-start mb-2">
+                <h3 class="text-lg font-semibold text-blue-700">{{ item.fileName }}</h3>
+                <span
+                  class="text-xs px-2 py-0.5 rounded-full"
+                  :class="item.fileType === 'image' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
+                >
+                  {{ item.fileType }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600 mb-1">
+                Project: <span class="font-medium">{{ item.projectName }}</span>
+                &nbsp;|&nbsp; Owner: <span class="font-medium">{{ item.ownerUsername }}</span>
+              </p>
+              <p v-if="item.standardizedName" class="text-sm text-gray-500 mb-1">
+                {{ item.standardizedName }}
+              </p>
+              <p v-if="item.summary" class="text-sm text-gray-600 mb-2 line-clamp-2">
+                {{ item.summary.length > 200 ? item.summary.substring(0, 200) + '...' : item.summary }}
+              </p>
+              <div v-if="item.keywords && item.keywords.length > 0" class="flex flex-wrap gap-1">
+                <span
+                  v-for="kw in item.keywords"
+                  :key="kw"
+                  class="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full"
+                >
+                  {{ kw }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="searchPerformed && searchResults.length === 0" class="mb-8 text-gray-500">
+          No results found for "{{ searchKeyword }}".
+        </div>
         
         <div class="bg-white rounded-xl shadow">
           <table class="w-full text-left table-auto">
@@ -132,13 +203,15 @@
         
         <div class="mb-4 p-3 border rounded-lg">
             <p class="font-semibold mb-2">Option: Upload experimental files (.pdf / .docx)</p>
-            <input type="file" ref="fileInput" @change="selectFile" class="mb-3" />
+            <input type="file" ref="fileInput" @change="selectFile" class="hidden" />
+            <button type="button" @click="fileInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition mb-3">Choose File</button>
             <p v-if="fileUploadMsg" :class="fileUploadMsg.includes('fail') ? 'text-red-600' : 'text-green-600'" class="text-sm mt-1">{{ fileUploadMsg }}</p>
         </div>
 
         <div class="mb-4 p-3 border rounded-lg">
             <p class="font-semibold mb-2">Option: Upload experimental images (.jpg / .png)</p>
-            <input type="file" ref="imageInput" @change="selectImage" class="mb-3" />
+            <input type="file" ref="imageInput" @change="selectImage" class="hidden" />
+            <button type="button" @click="imageInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition mb-3">Choose Image</button>
             <p v-if="imageUploadMsg" :class="imageUploadMsg.includes('fail') ? 'text-red-600' : 'text-green-600'" class="text-sm mt-1">{{ imageUploadMsg }}</p>
         </div>
 
@@ -205,6 +278,43 @@ const imageUploadMsg = ref(""); // Image upload success/failure information
 const projects = ref([]); // Project list data
 const loadingProjects = ref(true); // Loading state
 
+// --- search ---
+const searchKeyword = ref('');
+const searchResults = ref([]);
+const searchPerformed = ref(false);
+
+const performSearch = async () => {
+  const keyword = searchKeyword.value.trim();
+  if (!keyword) return;
+  searchPerformed.value = false;
+  searchResults.value = [];
+  try {
+    const res = await request.get('/projects/search', { params: { keyword } });
+    if (res.code === 200 && Array.isArray(res.data)) {
+      searchResults.value = res.data;
+    }
+  } catch (err) {
+    console.error('Search failed:', err);
+  }
+  searchPerformed.value = true;
+};
+
+const clearSearch = () => {
+  searchKeyword.value = '';
+  searchResults.value = [];
+  searchPerformed.value = false;
+};
+
+const goToSearchResult = (item) => {
+  const query = {};
+  if (item.fileType === 'image') {
+    query.imageId = item.imageId;
+  } else {
+    query.fileId = item.fileId;
+  }
+  router.push({ name: 'ProjectDetail', params: { id: item.projectId }, query });
+};
+
 // --- choose files/images ---
 const selectedFile = ref(null);
 const selectedImage = ref(null);
@@ -216,12 +326,12 @@ const imageInput = ref(null);
 
 const selectFile = (e) => {
   selectedFile.value = e.target.files[0];
-  fileUploadMsg.value = selectedFile.value ? `已选择文件: ${selectedFile.value.name}` : '';
+  fileUploadMsg.value = selectedFile.value ? `Selected file: ${selectedFile.value.name}` : '';
 };
 
 const selectImage = (e) => {
   selectedImage.value = e.target.files[0];
-  imageUploadMsg.value = selectedImage.value ? `已选择图片: ${selectedImage.value.name}` : '';
+  imageUploadMsg.value = selectedImage.value ? `Selected image: ${selectedImage.value.name}` : '';
 };
 
 // Reset the form and file selection

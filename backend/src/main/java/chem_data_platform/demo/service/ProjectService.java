@@ -7,6 +7,7 @@ import chem_data_platform.demo.dto.ProjectResponseDTO;
 import chem_data_platform.demo.dto.ProjectDetailDTO;
 import chem_data_platform.demo.dto.FileInfoDTO;
 import chem_data_platform.demo.dto.ImageInfoDTO;
+import chem_data_platform.demo.dto.SearchResultDTO;
 import chem_data_platform.demo.entity.FileInfo;
 import chem_data_platform.demo.entity.ImageInfo;
 import chem_data_platform.demo.entity.Project;
@@ -17,6 +18,7 @@ import chem_data_platform.demo.repository.ProjectRepository;
 import chem_data_platform.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,13 +27,15 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class ProjectService {
@@ -46,6 +50,11 @@ public class ProjectService {
 
     @Autowired
     private ImageInfoRepository imageInfoRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private final ObjectMapper mapper = new ObjectMapper();
       @Autowired
     private AnalysisService analysisService;@Value("${upload.base-path:C:/uploads/chem_data_platform}")
     private String uploadBasePath;
@@ -769,11 +778,101 @@ public class ProjectService {
     }
 
     /**
-     * 搜索项目
+     * Search files/images by keyword across PUBLIC projects + user's own PRIVATE projects.
+     * Searches inside the analysis_data JSON TEXT column for keyword matches
+     * in standardized_name, summary, data_description, and keywords fields.
      */
-    public List<ProjectResponseDTO> searchProjects(String query, String username) {
-        // 实现搜索逻辑，或者暂时返回用户所有项目
-        return getUserProjects(username);
+    public List<SearchResultDTO> searchByKeyword(String keyword, String username) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            return new ArrayList<>();
+        }
+        Long userId = user.getId();
+        String like = "%" + keyword.replace("'", "''") + "%";
+
+        // Search file_infos
+        String fileSql = "SELECT f.file_id, f.file_name, f.project_id, " +
+                "p.name AS project_name, p.visibility, u.username AS owner_username, " +
+                "f.analysis_data " +
+                "FROM file_infos f " +
+                "JOIN projects p ON f.project_id = p.id " +
+                "JOIN users u ON p.owner_id = u.id " +
+                "WHERE f.analysis_status = 'COMPLETED' " +
+                "AND (p.visibility = 'PUBLIC' OR p.owner_id = ?) " +
+                "AND f.analysis_data LIKE ?";
+
+        // Search image_infos
+        String imageSql = "SELECT i.image_id, i.image_name, i.project_id, " +
+                "p.name AS project_name, p.visibility, u.username AS owner_username, " +
+                "i.analysis_data " +
+                "FROM image_infos i " +
+                "JOIN projects p ON i.project_id = p.id " +
+                "JOIN users u ON p.owner_id = u.id " +
+                "WHERE i.analysis_status = 'COMPLETED' " +
+                "AND (p.visibility = 'PUBLIC' OR p.owner_id = ?) " +
+                "AND i.analysis_data LIKE ?";
+
+        List<SearchResultDTO> results = new ArrayList<>();
+
+        jdbcTemplate.query(fileSql, (rs) -> {
+            try {
+                String analysisDataStr = rs.getString("analysis_data");
+                if (analysisDataStr == null || analysisDataStr.isEmpty()) return;
+
+                JsonNode root = mapper.readTree(analysisDataStr);
+                SearchResultDTO dto = new SearchResultDTO();
+                dto.setProjectId(rs.getLong("project_id"));
+                dto.setProjectName(rs.getString("project_name"));
+                dto.setOwnerUsername(rs.getString("owner_username"));
+                dto.setVisibility(rs.getString("visibility"));
+                dto.setFileId(rs.getLong("file_id"));
+                dto.setFileName(rs.getString("file_name"));
+                dto.setFileType("file");
+                dto.setStandardizedName(getJsonText(root, "standardized_name"));
+                dto.setSummary(getJsonText(root, "summary"));
+                if (root.has("keywords") && root.get("keywords").isArray()) {
+                    List<String> kws = new ArrayList<>();
+                    root.get("keywords").forEach(n -> kws.add(n.asText()));
+                    dto.setKeywords(kws);
+                } else {
+                    dto.setKeywords(new ArrayList<>());
+                }
+                results.add(dto);
+            } catch (Exception ignored) {}
+        }, userId, like);
+
+        jdbcTemplate.query(imageSql, (rs) -> {
+            try {
+                String analysisDataStr = rs.getString("analysis_data");
+                if (analysisDataStr == null || analysisDataStr.isEmpty()) return;
+
+                JsonNode root = mapper.readTree(analysisDataStr);
+                SearchResultDTO dto = new SearchResultDTO();
+                dto.setProjectId(rs.getLong("project_id"));
+                dto.setProjectName(rs.getString("project_name"));
+                dto.setOwnerUsername(rs.getString("owner_username"));
+                dto.setVisibility(rs.getString("visibility"));
+                dto.setImageId(rs.getLong("image_id"));
+                dto.setFileName(rs.getString("image_name"));
+                dto.setFileType("image");
+                dto.setStandardizedName(getJsonText(root, "standardized_name"));
+                dto.setSummary(getJsonText(root, "summary"));
+                if (root.has("keywords") && root.get("keywords").isArray()) {
+                    List<String> kws = new ArrayList<>();
+                    root.get("keywords").forEach(n -> kws.add(n.asText()));
+                    dto.setKeywords(kws);
+                } else {
+                    dto.setKeywords(new ArrayList<>());
+                }
+                results.add(dto);
+            } catch (Exception ignored) {}
+        }, userId, like);
+
+        return results;
+    }
+
+    private String getJsonText(JsonNode root, String field) {
+        return root.has(field) ? root.get(field).asText() : "";
     }
 
     /**
