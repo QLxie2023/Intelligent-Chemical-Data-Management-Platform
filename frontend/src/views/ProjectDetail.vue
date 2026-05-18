@@ -3,6 +3,9 @@
     <button @click="router.back()" class="text-blue-600 hover:underline mb-4">
       ← Return to project list
     </button>
+    <router-link to="/dashboard" class="ml-4 text-blue-600 hover:underline">
+      Dashboard
+    </router-link>
 
     <div v-if="loading" class="text-lg text-gray-500">Loading project details...</div>
     <div v-else-if="error" class="text-red-600">Load error: {{ error }}</div>
@@ -60,12 +63,19 @@
           <div
             v-for="file in files"
             :key="file.fileId || file.imageId"
-            class="p-4 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer relative"
+            class="p-4 pb-12 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer relative"
             @click="openPreview(file)"
           >
             <p class="font-semibold text-blue-700">{{ file.fileName || file.imageName }}</p>
             <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
             <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
+            <button
+              @click.stop="deleteUploadedItem(file)"
+              class="absolute bottom-3 right-3 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
+              title="Delete this file"
+            >
+              Delete
+            </button>
             <span
               v-if="file._analysisStatus === 'PROCESSING' || file._analysisStatus === 'PENDING'"
               class="absolute top-2 right-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full"
@@ -869,6 +879,42 @@ async function uploadImage() {
   } catch (err) {
     imageMsg.value = 'Upload failed due to server error.';
     console.error('Image upload error:', err);
+  }
+}
+
+async function deleteUploadedItem(file) {
+  const itemId = file.fileId || file.imageId;
+  const itemName = file.fileName || file.imageName || 'this file';
+  const isImage = !!file.imageId || file._itemType === 'image';
+
+  if (!itemId) return;
+
+  const confirmed = confirm(`Are you sure you want to delete "${itemName}"?`);
+  if (!confirmed) return;
+
+  try {
+    const endpoint = isImage ? `/images/${itemId}/delete` : `/files/${itemId}/delete`;
+    const res = await request.post(endpoint);
+
+    if (res.code === 200) {
+      files.value = files.value.filter((item) => (item.fileId || item.imageId) !== itemId);
+
+      if (currentFileId.value === itemId) {
+        closePreview();
+        currentPreviewFile.value = null;
+        currentFileId.value = null;
+        currentFileType.value = 'file';
+        analysisStatus.value = '';
+        analysisMsg.value = '';
+        saveMsg.value = '';
+        resetEditForm();
+      }
+    } else {
+      alert(`Delete failed: ${res.message || 'Unknown error'}`);
+    }
+  } catch (err) {
+    console.error('Delete uploaded item failed:', err);
+    alert('Delete failed, please check the network or backend service.');
   }
 }
 

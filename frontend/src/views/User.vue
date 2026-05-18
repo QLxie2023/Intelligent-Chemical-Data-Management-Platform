@@ -15,9 +15,9 @@
       </div>
 
       <nav class="flex-1 space-y-2 px-4 text-gray-700">
-        <router-link class="nav-item" to="/" exact>dashboard</router-link>
+        <router-link class="nav-item" to="/dashboard">dashboard</router-link>
+        <router-link class="nav-item" to="/project-management" exact>project management</router-link>
         <router-link class="nav-item" to="/user">user management</router-link>
-        <router-link class="nav-item" to="/insight">data insight</router-link>
         <router-link class="nav-item" to="/normal_user">personal data</router-link>
       </nav>
 
@@ -54,7 +54,7 @@
                 <th class="py-2">Username</th>
                 <th class="py-2">Email</th>
                 <th class="py-2">Role</th>
-                <th class="py-2">Status</th>
+                <th class="py-2">Delete</th>
               </tr>
             </thead>
 
@@ -70,12 +70,13 @@
                 <td class="py-3">{{ user.email }}</td>
                 <td class="py-3">{{ user.role }}</td>
                 <td class="py-3">
-                  <span
-                    class="px-2 py-1 rounded text-sm text-white"
-                    :class="user.active ? 'bg-green-500' : 'bg-gray-400'"
+                  <button
+                    @click.stop="deleteUser(user)"
+                    class="px-3 py-1 rounded text-sm text-white bg-red-500 hover:bg-red-600 transition"
+                    title="Delete user"
                   >
-                    {{ user.active ? 'Active' : 'Disabled' }}
-                  </span>
+                    Delete
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -94,16 +95,6 @@
             <p class="text-gray-600"><strong>Username:</strong> {{ selectedUser.username }}</p>
             <p class="text-gray-600"><strong>Email:</strong> {{ selectedUser.email }}</p>
             <p class="text-gray-600"><strong>Role:</strong> {{ selectedUser.role }}</p>
-            
-            <p class="text-gray-600">
-              <strong>Status:</strong>
-              <span
-                class="ml-2 px-2 py-1 rounded text-sm text-white"
-                :class="selectedUser.active ? 'bg-green-500' : 'bg-gray-400'"
-              >
-                {{ selectedUser.active ? 'Active' : 'Disabled' }}
-              </span>
-            </p>
 
             <p class="text-gray-600"><strong>Created At:</strong> {{ selectedUser.createdAt }}</p>
           </div>
@@ -155,7 +146,6 @@ const users = ref([
     username: "alice",
     email: "alice@example.com",
     role: "Researcher",
-    active: true,
     projectCount: 5,
     fileCount: 12,
     imageCount: 8,
@@ -166,7 +156,6 @@ const users = ref([
     username: "bob",
     email: "bob@example.com",
     role: "Admin",
-    active: true,
     projectCount: 12,
     fileCount: 30,
     imageCount: 15,
@@ -177,7 +166,6 @@ const users = ref([
     username: "carol",
     email: "carol@example.com",
     role: "Researcher",
-    active: false,
     projectCount: 2,
     fileCount: 4,
     imageCount: 1,
@@ -194,6 +182,18 @@ const selectedUser = ref(null);
 // Select User Function
 const selectUser = (user) => {
   selectedUser.value = user;
+};
+
+// Delete User Function
+const deleteUser = (user) => {
+  const confirmed = confirm(`Are you sure you want to delete user "${user.username}"?`);
+  if (!confirmed) return;
+
+  users.value = users.value.filter((item) => item.id !== user.id);
+
+  if (selectedUser.value?.id === user.id) {
+    selectedUser.value = null;
+  }
 };
 
 // Search Filter Logic
