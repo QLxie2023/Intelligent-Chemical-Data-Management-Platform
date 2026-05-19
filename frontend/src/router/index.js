@@ -1,21 +1,22 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "../views/Home.vue";
+import Dashboard from "../views/Dashboard.vue";
+import ProjectManagement from "../views/Home.vue";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import Search from "../views/Search.vue";
 import User from "../views/User.vue";
-import Insight from "../views/Insight.vue";
 import ProjectDetail from '../views/ProjectDetail.vue';
 import N_User from "../views/N_User.vue";
 
 const routes = [
+  { path: "/", redirect: "/project-management" },
   { path: "/login", component: Login },
-  { path: "/", component: Home},
+  { path: "/dashboard", name: "Dashboard", component: Dashboard },
+  { path: "/project-management", name: "ProjectManagement", component: ProjectManagement },
   { path: "/register", component: Register },
   { path: "/search", component: Search},
   { path: "/user", component: User},
-  { path: "/insight", component: Insight},
   { path:"/normal_user", component: N_User},
   {
     path: '/projects/:id', // 动态匹配 /projects/1, /projects/2 等
@@ -43,12 +44,6 @@ const routes = [
   //   component: Search,
   //   meta: { requiresAuth: true } 
   // },
-  // {
-  //   path: "/insight",
-  //   component: Insight,
-  //   meta: { requiresAuth: true } 
-  // }
-  
 ];
 
 const router = createRouter({
