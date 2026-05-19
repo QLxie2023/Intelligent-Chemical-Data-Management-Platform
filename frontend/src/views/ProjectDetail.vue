@@ -72,8 +72,8 @@
             <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
             <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
             <button
-              @click.stop="deleteUploadedItem(file)"
-              class="absolute bottom-3 right-3 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
+              @click.stop="openDeleteConfirm(file)"
+              class="absolute bottom-3 right-3 px-3 py-1 rounded text-sm text-white bg-red-500 hover:bg-red-600 transition"
               title="Delete this file"
             >
               Delete
@@ -420,6 +420,37 @@
     </div>
 
     <div v-else class="text-lg text-gray-500">Project data is empty.</div>
+
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+      @click.self="cancelDelete"
+    >
+      <div class="w-full max-w-2xl min-h-[280px] rounded-2xl bg-white p-10 shadow-2xl">
+        <div class="flex min-h-[120px] items-center justify-center rounded-xl border border-red-100 bg-red-50 px-8 py-8">
+          <h2 class="text-center text-3xl font-bold text-gray-900">Delete this file?</h2>
+        </div>
+
+        <div class="mt-10 flex justify-center gap-5 border-t border-gray-100 pt-8">
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="min-w-32 rounded-lg border border-gray-300 px-7 py-3 text-gray-700 hover:bg-gray-100 transition disabled:opacity-60"
+            :disabled="isDeletingUploadedItem"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmDeleteUploadedItem"
+            class="min-w-40 rounded-lg bg-red-600 px-7 py-3 text-white hover:bg-red-700 transition disabled:opacity-60"
+            :disabled="isDeletingUploadedItem"
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -448,6 +479,9 @@ const fileMsg = ref('');
 const imageMsg = ref('');
 const fileUploadInput = ref(null);
 const imageUploadInput = ref(null);
+const showDeleteConfirm = ref(false);
+const pendingDeleteItem = ref(null);
+const isDeletingUploadedItem = ref(false);
 
 const analysisMsg = ref('');
 const currentPreviewFile = ref(null);
@@ -1049,16 +1083,27 @@ async function uploadImage() {
   }
 }
 
-async function deleteUploadedItem(file) {
+function openDeleteConfirm(file) {
+  pendingDeleteItem.value = file;
+  showDeleteConfirm.value = true;
+}
+
+function cancelDelete() {
+  if (isDeletingUploadedItem.value) return;
+  showDeleteConfirm.value = false;
+  pendingDeleteItem.value = null;
+}
+
+async function confirmDeleteUploadedItem() {
+  const file = pendingDeleteItem.value;
+  if (!file) return;
+
   const itemId = file.fileId || file.imageId;
-  const itemName = file.fileName || file.imageName || 'this file';
   const isImage = !!file.imageId || file._itemType === 'image';
 
   if (!itemId) return;
 
-  const confirmed = confirm(`Are you sure you want to delete "${itemName}"?`);
-  if (!confirmed) return;
-
+  isDeletingUploadedItem.value = true;
   try {
     const endpoint = isImage ? `/images/${itemId}/delete` : `/files/${itemId}/delete`;
     const res = await request.post(endpoint);
@@ -1076,12 +1121,17 @@ async function deleteUploadedItem(file) {
         saveMsg.value = '';
         resetEditForm();
       }
+
+      showDeleteConfirm.value = false;
+      pendingDeleteItem.value = null;
     } else {
       alert(`Delete failed: ${res.message || 'Unknown error'}`);
     }
   } catch (err) {
     console.error('Delete uploaded item failed:', err);
     alert('Delete failed, please check the network or backend service.');
+  } finally {
+    isDeletingUploadedItem.value = false;
   }
 }
 
