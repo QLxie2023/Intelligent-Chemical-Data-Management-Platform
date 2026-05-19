@@ -71,7 +71,7 @@
                 <td class="py-3">{{ user.role }}</td>
                 <td class="py-3">
                   <button
-                    @click.stop="deleteUser(user)"
+                    @click.stop="openDeleteConfirm(user)"
                     class="px-3 py-1 rounded text-sm text-white bg-red-500 hover:bg-red-600 transition"
                     title="Delete user"
                   >
@@ -129,6 +129,35 @@
 
     </main>
 
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+      @click.self="cancelDelete"
+    >
+      <div class="w-full max-w-2xl min-h-[280px] rounded-2xl bg-white p-10 shadow-2xl">
+        <div class="flex min-h-[120px] items-center justify-center rounded-xl border border-red-100 bg-red-50 px-8 py-8">
+          <h2 class="text-center text-3xl font-bold text-gray-900">Delete this user?</h2>
+        </div>
+
+        <div class="mt-10 flex justify-center gap-5 border-t border-gray-100 pt-8">
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="min-w-32 rounded-lg border border-gray-300 px-7 py-3 text-gray-700 hover:bg-gray-100 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmDeleteUser"
+            class="min-w-40 rounded-lg bg-red-600 px-7 py-3 text-white hover:bg-red-700 transition"
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -178,22 +207,36 @@ const searchKeyword = ref("");
 
 // Currently Selected User
 const selectedUser = ref(null);
+const showDeleteConfirm = ref(false);
+const pendingDeleteUser = ref(null);
 
 // Select User Function
 const selectUser = (user) => {
   selectedUser.value = user;
 };
 
+const openDeleteConfirm = (user) => {
+  pendingDeleteUser.value = user;
+  showDeleteConfirm.value = true;
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  pendingDeleteUser.value = null;
+};
+
 // Delete User Function
-const deleteUser = (user) => {
-  const confirmed = confirm(`Are you sure you want to delete user "${user.username}"?`);
-  if (!confirmed) return;
+const confirmDeleteUser = () => {
+  const user = pendingDeleteUser.value;
+  if (!user) return;
 
   users.value = users.value.filter((item) => item.id !== user.id);
 
   if (selectedUser.value?.id === user.id) {
     selectedUser.value = null;
   }
+
+  cancelDelete();
 };
 
 // Search Filter Logic

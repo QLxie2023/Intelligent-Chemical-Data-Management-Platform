@@ -153,14 +153,11 @@
                     <td class="px-6 py-4 text-sm text-gray-700">
                         <button 
                             v-if="canDeleteProject(project)" 
-                            @click.stop="deleteProject(project)" 
-                            class="text-red-500 hover:text-red-700 transition"
+                            @click.stop="openDeleteConfirm(project)" 
+                            class="px-3 py-1 rounded text-sm text-white bg-red-500 hover:bg-red-600 transition"
                             title="Delete project"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                            </svg>
+                            Delete
                         </button>
                     </td>
                 </tr>
@@ -237,6 +234,37 @@
       </div>
     </div>
 
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+      @click.self="cancelDelete"
+    >
+      <div class="w-full max-w-2xl min-h-[280px] rounded-2xl bg-white p-10 shadow-2xl">
+        <div class="flex min-h-[120px] items-center justify-center rounded-xl border border-red-100 bg-red-50 px-8 py-8">
+          <h2 class="text-center text-3xl font-bold text-gray-900">Delete this project?</h2>
+        </div>
+
+        <div class="mt-10 flex justify-center gap-5 border-t border-gray-100 pt-8">
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="min-w-32 rounded-lg border border-gray-300 px-7 py-3 text-gray-700 hover:bg-gray-100 transition disabled:opacity-60"
+            :disabled="isDeletingProject"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmDeleteProject"
+            class="min-w-40 rounded-lg bg-red-600 px-7 py-3 text-white hover:bg-red-700 transition disabled:opacity-60"
+            :disabled="isDeletingProject"
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
     </div>
 </template>
 
@@ -263,6 +291,9 @@ const router = useRouter();
 
 const showCreateModal = ref(false);
 const isCreating = ref(false);
+const showDeleteConfirm = ref(false);
+const pendingDeleteProject = ref(null);
+const isDeletingProject = ref(false);
 
 const newProject = ref({
   name: "",
@@ -486,22 +517,37 @@ const canDeleteProject = (project) => {
 };
 
 // 删除项目
-const deleteProject = async (project) => {
-  if (!confirm('确定要删除这个项目吗？删除后将无法恢复。')) {
-    return;
-  }
-  
+const openDeleteConfirm = (project) => {
+  pendingDeleteProject.value = project;
+  showDeleteConfirm.value = true;
+};
+
+const cancelDelete = () => {
+  if (isDeletingProject.value) return;
+  showDeleteConfirm.value = false;
+  pendingDeleteProject.value = null;
+};
+
+const confirmDeleteProject = async () => {
+  const project = pendingDeleteProject.value;
+  if (!project) return;
+
+  isDeletingProject.value = true;
   try {
     const res = await request.post(`/projects/${project.projectId}/delete`);
     if (res.code === 200) {
-      alert('项目删除成功');
-      fetchProjects(); // 重新获取项目列表
+      alert('Project deleted successfully');
+      showDeleteConfirm.value = false;
+      pendingDeleteProject.value = null;
+      fetchProjects();
     } else {
-      alert('删除失败: ' + res.message);
+      alert('Delete failed: ' + res.message);
     }
   } catch (err) {
-    console.error('删除项目失败:', err);
-    alert('删除失败，请检查网络连接');
+    console.error('Delete project failed:', err);
+    alert('Delete failed, please check the network connection.');
+  } finally {
+    isDeletingProject.value = false;
   }
 };
 
