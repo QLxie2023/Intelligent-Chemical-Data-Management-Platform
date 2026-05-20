@@ -72,7 +72,7 @@
                 <td class="py-3">
                   <button
                     @click.stop="openDeleteConfirm(user)"
-                    class="px-3 py-1 rounded text-sm text-white bg-red-500 hover:bg-red-600 transition"
+                    class="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
                     title="Delete user"
                   >
                     Delete
@@ -131,31 +131,48 @@
 
     <div
       v-if="showDeleteConfirm"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4 backdrop-blur-[2px]"
       @click.self="cancelDelete"
     >
-      <div class="w-full max-w-2xl min-h-[280px] rounded-2xl bg-white p-10 shadow-2xl">
-        <div class="flex min-h-[120px] items-center justify-center rounded-xl border border-red-100 bg-red-50 px-8 py-8">
-          <h2 class="text-center text-3xl font-bold text-gray-900">Delete this user?</h2>
+      <section class="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+        <header class="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75V4H3.5a.75.75 0 000 1.5h.31l.72 10.12A2.75 2.75 0 007.27 18h5.46a2.75 2.75 0 002.74-2.38l.72-10.12h.31a.75.75 0 000-1.5H14v-.25A2.75 2.75 0 0011.25 1h-2.5zM7.5 4v-.25c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V4h-5zm1.25 4.25a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm4 0a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold leading-6 text-gray-900">Delete this user?</h2>
+            <p class="mt-0.5 text-sm leading-5 text-gray-500">This action cannot be undone.</p>
+          </div>
+        </header>
+
+        <div class="space-y-4 px-5 py-5">
+          <p class="text-sm text-gray-600">
+            The selected account
+            <span v-if="pendingDeleteUser" class="font-medium text-gray-900">{{ pendingDeleteUser.username }}</span>
+            will be removed from the system user list.
+          </p>
+          <p v-if="pendingDeleteUser" class="truncate text-sm text-gray-500">{{ pendingDeleteUser.email }}</p>
         </div>
 
-        <div class="mt-10 flex justify-center gap-5 border-t border-gray-100 pt-8">
+        <footer class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4">
           <button
             type="button"
             @click="cancelDelete"
-            class="min-w-32 rounded-lg border border-gray-300 px-7 py-3 text-gray-700 hover:bg-gray-100 transition"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
           >
             Cancel
           </button>
           <button
             type="button"
             @click="confirmDeleteUser"
-            class="min-w-40 rounded-lg bg-red-600 px-7 py-3 text-white hover:bg-red-700 transition"
+            class="rounded-md border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
           >
             Confirm Delete
           </button>
-        </div>
-      </div>
+        </footer>
+      </section>
     </div>
 
   </div>
