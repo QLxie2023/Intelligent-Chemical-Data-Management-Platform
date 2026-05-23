@@ -16,10 +16,10 @@
 
       <!-- Navigation -->
       <nav class="flex-1 space-y-2 px-4 text-gray-700">
-        <router-link class="nav-item" to="/" exact>dashboard</router-link>
+        <router-link class="nav-item" to="/dashboard">dashboard</router-link>
+        <router-link class="nav-item" to="/project-management" exact>project management</router-link>
         <router-link class="nav-item" to="/user">user management</router-link>
         <!-- <router-link class="nav-item" to="/search">intelligent retrieval</router-link> -->
-        <router-link class="nav-item" to="/insight">data insight</router-link>
         <router-link class="nav-item" to="/normal_user">personal data</router-link>
       </nav>
 
@@ -36,7 +36,7 @@
     <main class="flex-1 p-8">
 
       <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold">Project Overview</h1>
+        <h1 class="text-3xl font-bold">Project Management</h1>
 
         <button
           @click="showCreateModal = true; resetFormAndFiles();"
@@ -64,7 +64,78 @@
       </div>
 
       <section class="mb-8">
-        <h2 class="text-xl font-semibold mb-4">My project list (total {{ projects.length }})</h2>
+        <h2 class="text-xl font-semibold mb-4">Project List (total {{ projects.length }})</h2>
+
+        <!-- Search bar -->
+        <div class="mb-6 flex gap-3">
+          <input
+            v-model="searchKeyword"
+            type="text"
+            placeholder="Search by keyword (e.g., experiment topic, chemical name...)"
+            class="flex-1 px-4 py-2 border rounded-lg"
+            @keyup.enter="performSearch"
+          />
+          <button
+            @click="performSearch"
+            class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Search
+          </button>
+          <button
+            v-if="searchResults.length > 0"
+            @click="clearSearch"
+            class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition"
+          >
+            Clear
+          </button>
+        </div>
+
+        <!-- Search results -->
+        <div v-if="searchResults.length > 0" class="mb-8">
+          <p class="text-sm text-gray-500 mb-3">
+            Found {{ searchResults.length }} result(s) for "{{ searchKeyword }}"
+          </p>
+          <div class="grid gap-4">
+            <div
+              v-for="item in searchResults"
+              :key="(item.fileId || item.imageId)"
+              class="bg-white rounded-xl shadow p-5 hover:shadow-md transition cursor-pointer"
+              @click="goToSearchResult(item)"
+            >
+              <div class="flex justify-between items-start mb-2">
+                <h3 class="text-lg font-semibold text-blue-700">{{ item.fileName }}</h3>
+                <span
+                  class="text-xs px-2 py-0.5 rounded-full"
+                  :class="item.fileType === 'image' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
+                >
+                  {{ item.fileType }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600 mb-1">
+                Project: <span class="font-medium">{{ item.projectName }}</span>
+                &nbsp;|&nbsp; Owner: <span class="font-medium">{{ item.ownerUsername }}</span>
+              </p>
+              <p v-if="item.standardizedName" class="text-sm text-gray-500 mb-1">
+                {{ item.standardizedName }}
+              </p>
+              <p v-if="item.summary" class="text-sm text-gray-600 mb-2 line-clamp-2">
+                {{ item.summary.length > 200 ? item.summary.substring(0, 200) + '...' : item.summary }}
+              </p>
+              <div v-if="item.keywords && item.keywords.length > 0" class="flex flex-wrap gap-1">
+                <span
+                  v-for="kw in item.keywords"
+                  :key="kw"
+                  class="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full"
+                >
+                  {{ kw }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="searchPerformed && searchResults.length === 0" class="mb-8 text-gray-500">
+          No results found for "{{ searchKeyword }}".
+        </div>
         
         <div class="bg-white rounded-xl shadow">
           <table class="w-full text-left table-auto">
@@ -82,14 +153,11 @@
                     <td class="px-6 py-4 text-sm text-gray-700">
                         <button 
                             v-if="canDeleteProject(project)" 
-                            @click.stop="deleteProject(project)" 
-                            class="text-red-500 hover:text-red-700 transition"
+                            @click.stop="openDeleteConfirm(project)" 
+                            class="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
                             title="Delete project"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                            </svg>
+                            Delete
                         </button>
                     </td>
                 </tr>
@@ -131,14 +199,16 @@
         </select>
         
         <div class="mb-4 p-3 border rounded-lg">
-            <p class="font-semibold mb-2">Option: Upload experimental files (.pdf / .docx)</p>
-            <input type="file" ref="fileInput" @change="selectFile" class="mb-3" />
+            <p class="font-semibold mb-2">Option: Upload experimental files (.pdf / .docx / .xlsx / .csv)</p>
+            <input type="file" ref="fileInput" @change="selectFile" class="hidden" />
+            <button type="button" @click="fileInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition mb-3">Choose File</button>
             <p v-if="fileUploadMsg" :class="fileUploadMsg.includes('fail') ? 'text-red-600' : 'text-green-600'" class="text-sm mt-1">{{ fileUploadMsg }}</p>
         </div>
 
         <div class="mb-4 p-3 border rounded-lg">
             <p class="font-semibold mb-2">Option: Upload experimental images (.jpg / .png)</p>
-            <input type="file" ref="imageInput" @change="selectImage" class="mb-3" />
+            <input type="file" ref="imageInput" @change="selectImage" class="hidden" />
+            <button type="button" @click="imageInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition mb-3">Choose Image</button>
             <p v-if="imageUploadMsg" :class="imageUploadMsg.includes('fail') ? 'text-red-600' : 'text-green-600'" class="text-sm mt-1">{{ imageUploadMsg }}</p>
         </div>
 
@@ -162,6 +232,54 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4 backdrop-blur-[2px]"
+      @click.self="cancelDelete"
+    >
+      <section class="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+        <header class="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75V4H3.5a.75.75 0 000 1.5h.31l.72 10.12A2.75 2.75 0 007.27 18h5.46a2.75 2.75 0 002.74-2.38l.72-10.12h.31a.75.75 0 000-1.5H14v-.25A2.75 2.75 0 0011.25 1h-2.5zM7.5 4v-.25c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V4h-5zm1.25 4.25a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm4 0a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold leading-6 text-gray-900">Delete this project?</h2>
+            <p class="mt-0.5 text-sm leading-5 text-gray-500">This action cannot be undone.</p>
+          </div>
+        </header>
+
+        <div class="space-y-4 px-5 py-5">
+          <p class="text-sm text-gray-600">
+            The selected project
+            <span v-if="pendingDeleteProject" class="font-medium text-gray-900">{{ pendingDeleteProject.name }}</span>
+            will be removed from project management.
+          </p>
+          <p v-if="pendingDeleteProject" class="truncate text-sm text-gray-500">Owner: {{ pendingDeleteProject.ownerUsername }}</p>
+        </div>
+
+        <footer class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4">
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition disabled:opacity-60"
+            :disabled="isDeletingProject"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmDeleteProject"
+            class="rounded-md border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-60"
+            :disabled="isDeletingProject"
+          >
+            Confirm Delete
+          </button>
+        </footer>
+      </section>
     </div>
 
     </div>
@@ -190,6 +308,9 @@ const router = useRouter();
 
 const showCreateModal = ref(false);
 const isCreating = ref(false);
+const showDeleteConfirm = ref(false);
+const pendingDeleteProject = ref(null);
+const isDeletingProject = ref(false);
 
 const newProject = ref({
   name: "",
@@ -205,6 +326,43 @@ const imageUploadMsg = ref(""); // Image upload success/failure information
 const projects = ref([]); // Project list data
 const loadingProjects = ref(true); // Loading state
 
+// --- search ---
+const searchKeyword = ref('');
+const searchResults = ref([]);
+const searchPerformed = ref(false);
+
+const performSearch = async () => {
+  const keyword = searchKeyword.value.trim();
+  if (!keyword) return;
+  searchPerformed.value = false;
+  searchResults.value = [];
+  try {
+    const res = await request.get('/projects/search', { params: { keyword } });
+    if (res.code === 200 && Array.isArray(res.data)) {
+      searchResults.value = res.data;
+    }
+  } catch (err) {
+    console.error('Search failed:', err);
+  }
+  searchPerformed.value = true;
+};
+
+const clearSearch = () => {
+  searchKeyword.value = '';
+  searchResults.value = [];
+  searchPerformed.value = false;
+};
+
+const goToSearchResult = (item) => {
+  const query = {};
+  if (item.fileType === 'image') {
+    query.imageId = item.imageId;
+  } else {
+    query.fileId = item.fileId;
+  }
+  router.push({ name: 'ProjectDetail', params: { id: item.projectId }, query });
+};
+
 // --- choose files/images ---
 const selectedFile = ref(null);
 const selectedImage = ref(null);
@@ -216,12 +374,12 @@ const imageInput = ref(null);
 
 const selectFile = (e) => {
   selectedFile.value = e.target.files[0];
-  fileUploadMsg.value = selectedFile.value ? `已选择文件: ${selectedFile.value.name}` : '';
+  fileUploadMsg.value = selectedFile.value ? `Selected file: ${selectedFile.value.name}` : '';
 };
 
 const selectImage = (e) => {
   selectedImage.value = e.target.files[0];
-  imageUploadMsg.value = selectedImage.value ? `已选择图片: ${selectedImage.value.name}` : '';
+  imageUploadMsg.value = selectedImage.value ? `Selected image: ${selectedImage.value.name}` : '';
 };
 
 // Reset the form and file selection
@@ -376,22 +534,37 @@ const canDeleteProject = (project) => {
 };
 
 // 删除项目
-const deleteProject = async (project) => {
-  if (!confirm('确定要删除这个项目吗？删除后将无法恢复。')) {
-    return;
-  }
-  
+const openDeleteConfirm = (project) => {
+  pendingDeleteProject.value = project;
+  showDeleteConfirm.value = true;
+};
+
+const cancelDelete = () => {
+  if (isDeletingProject.value) return;
+  showDeleteConfirm.value = false;
+  pendingDeleteProject.value = null;
+};
+
+const confirmDeleteProject = async () => {
+  const project = pendingDeleteProject.value;
+  if (!project) return;
+
+  isDeletingProject.value = true;
   try {
     const res = await request.post(`/projects/${project.projectId}/delete`);
     if (res.code === 200) {
-      alert('项目删除成功');
-      fetchProjects(); // 重新获取项目列表
+      alert('Project deleted successfully');
+      showDeleteConfirm.value = false;
+      pendingDeleteProject.value = null;
+      fetchProjects();
     } else {
-      alert('删除失败: ' + res.message);
+      alert('Delete failed: ' + res.message);
     }
   } catch (err) {
-    console.error('删除项目失败:', err);
-    alert('删除失败，请检查网络连接');
+    console.error('Delete project failed:', err);
+    alert('Delete failed, please check the network connection.');
+  } finally {
+    isDeletingProject.value = false;
   }
 };
 

@@ -3,6 +3,9 @@
     <button @click="router.back()" class="text-blue-600 hover:underline mb-4">
       ← Return to project list
     </button>
+    <router-link to="/dashboard" class="ml-4 text-blue-600 hover:underline">
+      Dashboard
+    </router-link>
 
     <div v-if="loading" class="text-lg text-gray-500">Loading project details...</div>
     <div v-else-if="error" class="text-red-600">Load error: {{ error }}</div>
@@ -27,8 +30,9 @@
         <h2 class="text-2xl font-semibold mb-4">Upload Project Files</h2>
 
         <div class="mb-4">
-          <p class="font-semibold mb-1">Upload document (.pdf / .docx)</p>
-          <input type="file" ref="fileUploadInput" @change="handleFileSelect" />
+          <p class="font-semibold mb-1">Upload document (.pdf / .docx / .xlsx / .csv)</p>
+          <input type="file" ref="fileUploadInput" @change="handleFileSelect" class="hidden" />
+          <button type="button" @click="fileUploadInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Choose File</button>
           <button
             @click="uploadFile"
             class="ml-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -40,7 +44,8 @@
 
         <div class="mb-4">
           <p class="font-semibold mb-1">Upload image (.jpg / .png)</p>
-          <input type="file" ref="imageUploadInput" @change="handleImageSelect" />
+          <input type="file" ref="imageUploadInput" @change="handleImageSelect" class="hidden" />
+          <button type="button" @click="imageUploadInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Choose Image</button>
           <button
             @click="uploadImage"
             class="ml-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
@@ -60,12 +65,19 @@
           <div
             v-for="file in files"
             :key="file.fileId || file.imageId"
-            class="p-4 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer relative"
+            class="p-4 pb-12 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer relative"
             @click="openPreview(file)"
           >
             <p class="font-semibold text-blue-700">{{ file.fileName || file.imageName }}</p>
             <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
             <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
+            <button
+              @click.stop="openDeleteConfirm(file)"
+              class="absolute bottom-3 right-3 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
+              title="Delete this file"
+            >
+              Delete
+            </button>
             <span
               v-if="file._analysisStatus === 'PROCESSING' || file._analysisStatus === 'PENDING'"
               class="absolute top-2 right-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full"
@@ -125,10 +137,102 @@
                 :src="previewUrl"
                 class="max-w-full max-h-full mx-auto"
               />
+              <pre
+                v-else-if="previewType === 'csv'"
+                class="text-sm text-gray-800 whitespace-pre-wrap p-4 overflow-auto h-full"
+              >{{ previewTextContent }}</pre>
+              <div
+                v-else-if="previewType === 'download'"
+                class="flex flex-col items-center justify-center h-full text-gray-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="mb-4 text-gray-400" viewBox="0 0 16 16">
+                  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                  <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                <p class="mb-2">This file format cannot be previewed in browser.</p>
+                <a
+                  :href="previewUrl"
+                  :download="(currentPreviewFile?.fileName || 'file')"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                >
+                  Download File
+                </a>
+              </div>
+              <div
+                v-else
+                class="flex items-center justify-center h-full text-gray-400"
+              >
+                File preview not available
+              </div>
             </div>
 
-            <!-- Right: AI analysis results (editable) -->
+            <!-- Right: analysis results or manual keywords form -->
             <div class="w-1/2 pl-2 border-l overflow-auto">
+
+              <!-- Spreadsheet files: manual keywords input (no AI analysis) -->
+              <div v-if="isSpreadsheet" class="p-4">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-lg font-semibold text-purple-800">File Keywords</h3>
+                  <span class="text-xs text-gray-400">Spreadsheet file — enter keywords manually</span>
+                </div>
+
+                <div v-if="analysisStatus === 'COMPLETED' && editForm.keywords.length > 0" class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">Saved Keywords</label>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span
+                      v-for="(kw, idx) in editForm.keywords"
+                      :key="idx"
+                      class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                    >
+                      {{ kw }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-400">These keywords have been saved. You can save new keywords to update them.</p>
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-1">
+                    {{ analysisStatus === 'COMPLETED' ? 'Update Keywords' : 'Enter Keywords' }}
+                  </label>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span
+                      v-for="(kw, idx) in manualKeywords"
+                      :key="idx"
+                      class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                    >
+                      {{ kw }}
+                      <button @click="removeManualKeyword(idx)" class="ml-1 text-blue-500 hover:text-red-500">&times;</button>
+                    </span>
+                  </div>
+                  <div class="flex gap-2">
+                    <input
+                      v-model="manualKeywordInput"
+                      @keyup.enter="addManualKeyword"
+                      type="text"
+                      placeholder="Add a keyword"
+                      class="flex-1 px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                    />
+                    <button @click="addManualKeyword" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Add</button>
+                  </div>
+                </div>
+
+                <div class="flex gap-3 mt-4">
+                  <button
+                    @click="saveManualKeywords"
+                    :disabled="manualSaving || manualKeywords.length === 0"
+                    class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition"
+                  >
+                    {{ manualSaving ? 'Saving...' : 'Save Keywords' }}
+                  </button>
+                </div>
+
+                <p v-if="manualSaveMsg" class="mt-2 text-sm" :class="manualSaveMsg.includes('success') ? 'text-green-600' : 'text-red-600'">
+                  {{ manualSaveMsg }}
+                </p>
+              </div>
+
+              <!-- Non-spreadsheet files: AI analysis flow -->
+              <template v-else>
               <!-- Processing state -->
               <div v-if="analysisStatus === 'PROCESSING'" class="flex flex-col items-center justify-center h-full">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
@@ -308,6 +412,7 @@
               <div v-else class="flex flex-col items-center justify-center h-full">
                 <p class="text-gray-400">Click a file to view analysis results</p>
               </div>
+              </template>
             </div>
           </div>
         </div>
@@ -315,6 +420,54 @@
     </div>
 
     <div v-else class="text-lg text-gray-500">Project data is empty.</div>
+
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4 backdrop-blur-[2px]"
+      @click.self="cancelDelete"
+    >
+      <section class="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+        <header class="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75V4H3.5a.75.75 0 000 1.5h.31l.72 10.12A2.75 2.75 0 007.27 18h5.46a2.75 2.75 0 002.74-2.38l.72-10.12h.31a.75.75 0 000-1.5H14v-.25A2.75 2.75 0 0011.25 1h-2.5zM7.5 4v-.25c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V4h-5zm1.25 4.25a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm4 0a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold leading-6 text-gray-900">Delete this file?</h2>
+            <p class="mt-0.5 text-sm leading-5 text-gray-500">This action cannot be undone.</p>
+          </div>
+        </header>
+
+        <div class="space-y-4 px-5 py-5">
+          <p class="text-sm text-gray-600">
+            The selected file
+            <span v-if="pendingDeleteItem" class="font-medium text-gray-900">{{ pendingDeleteItem.fileName || pendingDeleteItem.imageName }}</span>
+            will be removed from this project.
+          </p>
+          <p v-if="pendingDeleteItem" class="truncate text-sm text-gray-500">Type: {{ pendingDeleteItem.fileType || 'image' }}</p>
+        </div>
+
+        <footer class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4">
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition disabled:opacity-60"
+            :disabled="isDeletingUploadedItem"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmDeleteUploadedItem"
+            class="rounded-md border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-60"
+            :disabled="isDeletingUploadedItem"
+          >
+            Confirm Delete
+          </button>
+        </footer>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -334,6 +487,7 @@ const error = ref('');
 
 const previewUrl = ref('');
 const previewType = ref('');
+const previewTextContent = ref('');
 const currentBlobUrl = ref('');
 
 const selectedFile = ref(null);
@@ -342,6 +496,9 @@ const fileMsg = ref('');
 const imageMsg = ref('');
 const fileUploadInput = ref(null);
 const imageUploadInput = ref(null);
+const showDeleteConfirm = ref(false);
+const pendingDeleteItem = ref(null);
+const isDeletingUploadedItem = ref(false);
 
 const analysisMsg = ref('');
 const currentPreviewFile = ref(null);
@@ -377,6 +534,48 @@ const tableHeaders = computed(() => {
   }
   return [];
 });
+
+const isSpreadsheet = computed(() => {
+  const name = (currentPreviewFile.value?.fileName || '').toLowerCase();
+  return name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv');
+});
+
+const manualKeywords = ref([]);
+const manualKeywordInput = ref('');
+const manualSaving = ref(false);
+const manualSaveMsg = ref('');
+
+function addManualKeyword() {
+  const kw = manualKeywordInput.value.trim();
+  if (kw && !manualKeywords.value.includes(kw)) {
+    manualKeywords.value.push(kw);
+  }
+  manualKeywordInput.value = '';
+}
+
+function removeManualKeyword(idx) {
+  manualKeywords.value.splice(idx, 1);
+}
+
+async function saveManualKeywords() {
+  if (!currentFileId.value || manualKeywords.value.length === 0) return;
+  manualSaving.value = true;
+  manualSaveMsg.value = '';
+  try {
+    const res = await request.put(`/files/${currentFileId.value}/manual-keywords`, {
+      keywords: manualKeywords.value
+    });
+    if (res.code === 200) {
+      manualSaveMsg.value = 'Keywords saved successfully!';
+    } else {
+      manualSaveMsg.value = 'Save failed: ' + (res.message || 'Unknown error');
+    }
+  } catch (err) {
+    manualSaveMsg.value = 'Save failed: server error';
+  } finally {
+    manualSaving.value = false;
+  }
+}
 
 async function fetchProjectDetail() {
   try {
@@ -443,6 +642,11 @@ async function openPreview(file) {
   analysisMsg.value = 'Loading analysis status...';
   saveMsg.value = '';
   showGraph.value = false;
+  manualKeywords.value = [];
+  manualKeywordInput.value = '';
+  manualSaving.value = false;
+  manualSaveMsg.value = '';
+  previewTextContent.value = '';
   resetEditForm();
 
   if (currentBlobUrl.value) {
@@ -460,19 +664,38 @@ async function openPreview(file) {
 
   previewUrl.value = '';
   previewType.value = type;
+  previewTextContent.value = '';
+
+  // Determine preview type from file extension first (more reliable than MIME type)
+  const fileName = (file.fileName || file.imageName || '').toLowerCase();
+  const isCsv = fileName.endsWith('.csv') || fileName.endsWith('.txt');
+  const isImage = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png') || fileName.endsWith('.gif');
+  const isPdf = fileName.endsWith('.pdf');
 
   try {
     const response = await request.get(fullApiUrl, { responseType: 'blob' });
-    const mimeType = response.type;
+    const mimeType = response.type || '';
 
-    if (mimeType.includes('image') || mimeType.includes('pdf')) {
+    if (isImage || mimeType.includes('image')) {
       const blobUrl = URL.createObjectURL(response);
       currentBlobUrl.value = blobUrl;
       previewUrl.value = blobUrl;
-      previewType.value = mimeType.includes('image') ? 'image' : 'pdf';
+      previewType.value = 'image';
+    } else if (isPdf || mimeType.includes('pdf')) {
+      const blobUrl = URL.createObjectURL(response);
+      currentBlobUrl.value = blobUrl;
+      previewUrl.value = blobUrl;
+      previewType.value = 'pdf';
+    } else if (isCsv || mimeType.includes('csv') || mimeType.includes('text/plain')) {
+      const text = await response.text();
+      previewTextContent.value = text.substring(0, 50000);
+      previewType.value = 'csv';
+      previewUrl.value = 'csv-preview'; // placeholder to open the modal
     } else {
-      previewUrl.value = fullApiUrl;
-      previewType.value = 'unsupported';
+      const blobUrl = URL.createObjectURL(response);
+      currentBlobUrl.value = blobUrl;
+      previewUrl.value = blobUrl;
+      previewType.value = 'download';
     }
   } catch (err) {
     console.error(`File load failed: ${fullApiUrl}`, err);
@@ -548,9 +771,14 @@ async function loadAnalysisResults(fileId) {
     } else if (data.status === 'FAILED') {
       analysisMsg.value = data.errorReason || 'AI analysis failed';
     } else if (data.status === 'PENDING') {
-      analysisStatus.value = 'PROCESSING';
-      analysisMsg.value = 'AI is analyzing, please wait...';
-      await triggerAnalysis(fileId);
+      if (isSpreadsheet.value) {
+        analysisStatus.value = '';
+        analysisMsg.value = 'Spreadsheet file — please enter keywords manually.';
+      } else {
+        analysisStatus.value = 'PROCESSING';
+        analysisMsg.value = 'AI is analyzing, please wait...';
+        await triggerAnalysis(fileId);
+      }
     }
   } catch (err) {
     console.error('Load analysis error:', err);
@@ -872,6 +1100,58 @@ async function uploadImage() {
   }
 }
 
+function openDeleteConfirm(file) {
+  pendingDeleteItem.value = file;
+  showDeleteConfirm.value = true;
+}
+
+function cancelDelete() {
+  if (isDeletingUploadedItem.value) return;
+  showDeleteConfirm.value = false;
+  pendingDeleteItem.value = null;
+}
+
+async function confirmDeleteUploadedItem() {
+  const file = pendingDeleteItem.value;
+  if (!file) return;
+
+  const itemId = file.fileId || file.imageId;
+  const isImage = !!file.imageId || file._itemType === 'image';
+
+  if (!itemId) return;
+
+  isDeletingUploadedItem.value = true;
+  try {
+    const endpoint = isImage ? `/images/${itemId}/delete` : `/files/${itemId}/delete`;
+    const res = await request.post(endpoint);
+
+    if (res.code === 200) {
+      files.value = files.value.filter((item) => (item.fileId || item.imageId) !== itemId);
+
+      if (currentFileId.value === itemId) {
+        closePreview();
+        currentPreviewFile.value = null;
+        currentFileId.value = null;
+        currentFileType.value = 'file';
+        analysisStatus.value = '';
+        analysisMsg.value = '';
+        saveMsg.value = '';
+        resetEditForm();
+      }
+
+      showDeleteConfirm.value = false;
+      pendingDeleteItem.value = null;
+    } else {
+      alert(`Delete failed: ${res.message || 'Unknown error'}`);
+    }
+  } catch (err) {
+    console.error('Delete uploaded item failed:', err);
+    alert('Delete failed, please check the network or backend service.');
+  } finally {
+    isDeletingUploadedItem.value = false;
+  }
+}
+
 async function downloadAnalysisExcel() {
   if (!currentFileId.value) return;
   try {
@@ -920,6 +1200,18 @@ onMounted(async () => {
   await fetchProjectDetail();
   await fetchFiles();
   loading.value = false;
+
+  // If navigated from search with a specific fileId/imageId, auto-open its preview
+  const targetFileId = route.query.fileId || route.query.imageId;
+  if (targetFileId) {
+    const target = files.value.find(f =>
+      (f.fileId && String(f.fileId) === String(targetFileId)) ||
+      (f.imageId && String(f.imageId) === String(targetFileId))
+    );
+    if (target) {
+      openPreview(target);
+    }
+  }
 });
 
 onUnmounted(() => {

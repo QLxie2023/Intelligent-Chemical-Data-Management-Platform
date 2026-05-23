@@ -93,7 +93,7 @@ const handleLogin = async () => {
       const { token, user } = res.data;
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-      router.push("/");
+      router.push("/project-management");
     } else if (res.code === 404) {
       errorMsg.value = "User does not exist!";
     } else if (res.code === 401) {

@@ -141,15 +141,16 @@ public class QwenService {
 
         Map<String, String> systemMsg = new HashMap<>();
         systemMsg.put("role", "system");
-        systemMsg.put("content", "你是一个专业的文档数据提取专家。你的任务是从用户上传的文档中提取结构化数据。\n\n" +
-                "核心规则：\n" +
-                "1. 你必须先阅读并理解文档内容，然后基于文档实际内容提取数据。\n" +
-                "2. summary 和 standardized_name 必须反映文档的真实内容，不要填 N/A。\n" +
-                "3. 对于实验条件、结果等字段，如果文档中有相关数据则提取，没有则填空数组 []。\n" +
-                "4. 所有数值必须与文档原文一致，保留原始精度和单位。\n" +
-                "5. 你必须输出严格的JSON格式，不要包含markdown语法或额外说明文字。\n" +
-                "6. 每个字段都必须填写，不能省略任何字段。\n" +
-                "7. 绝对不允许编造数据。如果无法读取文档内容，请返回 {\"error\": \"无法读取文档内容\"}。");
+        systemMsg.put("content", "You are a professional document data extraction expert. Your task is to extract structured data from uploaded documents.\n\n" +
+                "Core rules:\n" +
+                "1. You must read and understand the document content first, then extract data based on the actual content.\n" +
+                "2. summary and standardized_name must reflect the true content of the document, do not fill N/A.\n" +
+                "3. For experiment conditions, results, etc., extract if present in the document; otherwise use empty array [].\n" +
+                "4. All numerical values must match the original document, preserving original precision and units.\n" +
+                "5. You must output strict JSON format, do not include markdown syntax or extra explanation text.\n" +
+                "6. Every field must be filled, do not omit any field.\n" +
+                "7. Absolutely do not fabricate data. If you cannot read the document content, return {\"error\": \"Unable to read document content\"}.\n" +
+                "8. All output content must be in English.");
         messages.add(systemMsg);
 
         Map<String, String> fileRefMsg = new HashMap<>();
@@ -253,36 +254,37 @@ public class QwenService {
     }
 
     public static String buildChemicalAnalysisPrompt() {
-        return "请仔细阅读上传的文档，从中提取结构化数据。\n\n" +
-                "重要规则：\n" +
-                "- 你必须基于文档的实际内容来填写每个字段。\n" +
-                "- summary 和 standardized_name 必须反映文档的真实内容，绝对不能填 \"N/A\"。\n" +
-                "- 如果文档是实验报告，提取实验条件和结果数据；如果是其他类型文档，提取文档中的关键信息作为 results。\n" +
-                "- 如果文档中有表格，按原始结构提取到 table_data_raw。\n" +
-                "- keywords 必须从文档中提取3-8个关键术语，不能为空。\n\n" +
-                "请严格按照以下JSON格式返回结果（不要包含markdown标记）：\n\n" +
+        return "Please read the uploaded document carefully and extract structured data from it.\n\n" +
+                "Important rules:\n" +
+                "- You must fill every field based on the actual content of the document.\n" +
+                "- summary and standardized_name must reflect the true content of the document, never fill \"N/A\".\n" +
+                "- If the document is an experiment report, extract experiment conditions and results; for other types, extract key information as results.\n" +
+                "- If the document contains tables, extract them into table_data_raw preserving the original structure.\n" +
+                "- keywords must contain 3-8 key terms extracted from the document, cannot be empty.\n" +
+                "- All output content must be in English.\n\n" +
+                "Please return results in the following JSON format strictly (do not include markdown markers):\n\n" +
                 "{\n" +
-                "  \"standardized_name\": \"文档的规范化名称，格式：文档类型_主题_关键特征（如：竞赛目录_全国大学生竞赛_2023年度，或：简历_软件工程_保研申请）\",\n" +
-                "  \"summary\": \"基于文档原文的摘要（150-300字），必须概括文档的核心内容，包含关键数据和发现。\",\n" +
-                "  \"data_description\": \"数据的整体说明，包括：文档来源、数据类型（定性/定量）、数据内容概述\",\n" +
+                "  \"standardized_name\": \"Standardized name of the document, format: DocumentType_Topic_KeyFeature (e.g., Competition_Directory_NationalStudentCompetition_2023, or Resume_SoftwareEngineering_GraduateApplication)\",\n" +
+                "  \"summary\": \"Summary based on the original document (150-300 words), must cover the core content including key data and findings.\",\n" +
+                "  \"data_description\": \"Overall description of the data, including: document source, data type (qualitative/quantitative), data content overview\",\n" +
                 "  \"experiment_conditions\": [\n" +
-                "    {\"parameter\": \"参数名\", \"value\": \"从文档提取的数值\", \"unit\": \"单位\", \"remarks\": \"备注\"}\n" +
+                "    {\"parameter\": \"Parameter name\", \"value\": \"Value extracted from document\", \"unit\": \"Unit\", \"remarks\": \"Remarks\"}\n" +
                 "  ],\n" +
                 "  \"results\": [\n" +
-                "    {\"parameter\": \"指标名\", \"value\": \"从文档提取的数值\", \"unit\": \"单位\", \"remarks\": \"备注\"}\n" +
+                "    {\"parameter\": \"Metric name\", \"value\": \"Value extracted from document\", \"unit\": \"Unit\", \"remarks\": \"Remarks\"}\n" +
                 "  ],\n" +
-                "  \"keywords\": [\"从文档中提取的3-8个关键术语\"],\n" +
+                "  \"keywords\": [\"3-8 key terms extracted from the document\"],\n" +
                 "  \"table_data_raw\": [\n" +
-                "    {\"row_label\": \"行标签\", \"col1\": \"值1\", \"col2\": \"值2\"}\n" +
+                "    {\"row_label\": \"Row label\", \"col1\": \"Value 1\", \"col2\": \"Value 2\"}\n" +
                 "  ]\n" +
                 "}\n\n" +
-                "字段填写说明：\n" +
-                "- standardized_name: 必须根据文档内容命名，不要填 N/A\n" +
-                "- summary: 必须概括文档核心内容，不要填 N/A\n" +
-                "- data_description: 描述文档中的数据特征，不要填 N/A\n" +
-                "- experiment_conditions: 如果文档包含实验条件则提取，否则填空数组 []\n" +
-                "- results: 提取文档中的关键数据指标，如果文档有列表、排名、统计数据等也放在这里\n" +
-                "- keywords: 必须提取3-8个关键词，来自文档中的专业术语或核心概念\n" +
-                "- table_data_raw: 如果文档中有表格数据，按原始表格结构提取；没有则填空数组 []";
+                "Field instructions:\n" +
+                "- standardized_name: Must be named based on document content, do not fill N/A\n" +
+                "- summary: Must summarize the core content of the document, do not fill N/A\n" +
+                "- data_description: Describe data characteristics in the document, do not fill N/A\n" +
+                "- experiment_conditions: Extract if the document contains experiment conditions; otherwise use empty array []\n" +
+                "- results: Extract key data metrics from the document; lists, rankings, statistics also go here\n" +
+                "- keywords: Must extract 3-8 keywords from professional terms or core concepts in the document\n" +
+                "- table_data_raw: Extract table data preserving original structure if present; otherwise use empty array []";
     }
 }

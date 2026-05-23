@@ -5,6 +5,7 @@ import chem_data_platform.demo.dto.ProjectResponseDTO;
 import chem_data_platform.demo.dto.ProjectDetailDTO;
 import chem_data_platform.demo.dto.FileInfoDTO;
 import chem_data_platform.demo.dto.ImageInfoDTO;
+import chem_data_platform.demo.dto.SearchResultDTO;
 import chem_data_platform.demo.service.ProjectService;
 import chem_data_platform.demo.utils.JwtUtil;
 import chem_data_platform.demo.vo.ApiResponse;
@@ -138,7 +139,7 @@ public class ProjectController {
      * GET /api/v1/projects/search
      */
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<ProjectResponseDTO>>> searchProjects(
+    public ResponseEntity<ApiResponse<List<SearchResultDTO>>> searchProjects(
             @RequestParam("keyword") String keyword,
             @RequestHeader("Authorization") String authHeader) {
         try {
@@ -155,11 +156,11 @@ public class ProjectController {
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
-            List<ProjectResponseDTO> projects = projectService.searchProjects(keyword, username);
+            List<SearchResultDTO> results = projectService.searchByKeyword(keyword, username);
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("搜索结果", projects));
+                    .body(ApiResponse.success("搜索结果", results));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity

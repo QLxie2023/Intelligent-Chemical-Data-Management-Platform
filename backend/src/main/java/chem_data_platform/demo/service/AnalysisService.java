@@ -33,9 +33,6 @@ public class AnalysisService {
     private String analysisProvider;
 
     @Autowired(required = false)
-    private KimiService kimiService;
-
-    @Autowired(required = false)
     private QwenService qwenService;
 
     public AnalysisService(AnalysisResultRepository analysisResultRepository,
@@ -47,12 +44,10 @@ public class AnalysisService {
     }
 
     public AnalysisResult analyzeFile(Long projectId, Long fileId, File file) {
-        if ("qwen".equalsIgnoreCase(analysisProvider) && qwenService != null && qwenService.isConfigured()) {
+        if (qwenService != null && qwenService.isConfigured()) {
             return analyzeFileWithQwen(projectId, fileId, file);
-        } else if (kimiService != null && kimiService.isConfigured()) {
-            return analyzeFileWithKimi(projectId, fileId, file);
         } else {
-            throw new IllegalStateException("No AI service configured. Set qwen.api-key or kimi.api-key in application.properties");
+            throw new IllegalStateException("Qwen AI service not configured. Set qwen.api-key in application.properties");
         }
     }
 
@@ -97,40 +92,6 @@ public class AnalysisService {
             ar.setFileId(fileId);
             ar.setRawResponse("qwen-error:" + e.getMessage());
             ar.setSummary("qwen-error:" + e.getMessage());
-            ar.setCreatedAt(LocalDateTime.now());
-            return ar;
-        }
-    }
-
-    private AnalysisResult analyzeFileWithKimi(Long projectId, Long fileId, File file) {
-        log.info("Analyzing file with Kimi: projectId={}, fileId={}", projectId, fileId);
-        try {
-            org.springframework.web.multipart.MultipartFile multipartFile = createMultipartFileFromFile(file);
-            String fileId_kimi = kimiService.uploadFileToKimi(multipartFile);
-            log.info("File uploaded to Kimi: {}", fileId_kimi);
-
-            String customPrompt = buildKimiAnalysisPrompt();
-            String kimiRawResponse = kimiService.analyzeFileWithKimi(fileId_kimi, customPrompt);
-            log.info("Kimi analysis complete, response length: {}", kimiRawResponse != null ? kimiRawResponse.length() : 0);
-
-            String formattedResponse = ensureStandardFormat(kimiRawResponse);
-
-            AnalysisResult ar = new AnalysisResult();
-            ar.setProjectId(projectId);
-            ar.setFileId(fileId);
-            ar.setRawResponse(formattedResponse);
-            ar.setSummary(extractSummaryFromJson(formattedResponse));
-            ar.setCreatedAt(LocalDateTime.now());
-
-            meterRegistry.counter("analysis.requests", "provider", "kimi").increment();
-            return ar;
-        } catch (Exception e) {
-            log.error("Kimi analysis failed: {}", e.getMessage(), e);
-            AnalysisResult ar = new AnalysisResult();
-            ar.setProjectId(projectId);
-            ar.setFileId(fileId);
-            ar.setRawResponse("kimi-error:" + e.getMessage());
-            ar.setSummary("kimi-error:" + e.getMessage());
             ar.setCreatedAt(LocalDateTime.now());
             return ar;
         }
@@ -212,31 +173,6 @@ public class AnalysisService {
             log.warn("Failed to extract summary: {}", e.getMessage());
         }
         return json != null ? json.substring(0, Math.min(500, json.length())) : "";
-    }
-
-    private String buildKimiAnalysisPrompt() {
-        return "请分析上传的文档，提取所有关键实验数据。返回格式必须是以下 JSON 结构：\n\n"
-             + "{\n"
-             + "  \"summary\": \"文档的简要摘要\",\n"
-             + "  \"tableData\": [\n"
-             + "    {\"parameter\": \"参数名\", \"value\": \"数值\", \"unit\": \"单位\", \"remarks\": \"备注\"}\n"
-             + "  ]\n"
-             + "}";
-    }
-
-    private org.springframework.web.multipart.MultipartFile createMultipartFileFromFile(File file) throws java.io.IOException {
-        return new org.springframework.web.multipart.MultipartFile() {
-            @Override public String getName() { return file.getName(); }
-            @Override public String getOriginalFilename() { return file.getName(); }
-            @Override public String getContentType() { return "application/octet-stream"; }
-            @Override public boolean isEmpty() { return file.length() == 0; }
-            @Override public long getSize() { return file.length(); }
-            @Override public byte[] getBytes() throws java.io.IOException { return java.nio.file.Files.readAllBytes(file.toPath()); }
-            @Override public java.io.InputStream getInputStream() throws java.io.IOException { return new java.io.FileInputStream(file); }
-            @Override public org.springframework.core.io.Resource getResource() { return new org.springframework.core.io.FileSystemResource(file); }
-            @Override public void transferTo(File dest) throws java.io.IOException { java.nio.file.Files.copy(file.toPath(), dest.toPath()); }
-            @Override public void transferTo(java.nio.file.Path dest) throws java.io.IOException { java.nio.file.Files.copy(file.toPath(), dest); }
-        };
     }
 
     public AnalysisResult analyzeImage(Long projectId, Long imageId, File image) {

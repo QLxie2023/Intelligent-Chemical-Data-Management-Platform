@@ -16,10 +16,10 @@
 
       <!-- Navigation -->
       <nav class="flex-1 space-y-2 px-4 text-gray-700">
-        <router-link class="nav-item" to="/" exact>dashboard</router-link>
+        <router-link class="nav-item" to="/dashboard">dashboard</router-link>
+        <router-link class="nav-item" to="/project-management" exact>project management</router-link>
         <router-link class="nav-item" to="/user">user management</router-link>
         <!-- <router-link class="nav-item" to="/search">intelligent retrieval</router-link> -->
-        <router-link class="nav-item" to="/insight">data insight</router-link>
         <router-link class="nav-item" to="/normal_user">personal data</router-link>
       </nav>
 

@@ -15,9 +15,9 @@
       </div>
 
       <nav class="flex-1 space-y-2 px-4 text-gray-700">
-        <router-link class="nav-item" to="/" exact>dashboard</router-link>
+        <router-link class="nav-item" to="/dashboard">dashboard</router-link>
+        <router-link class="nav-item" to="/project-management" exact>project management</router-link>
         <router-link class="nav-item" to="/user">user management</router-link>
-        <router-link class="nav-item" to="/insight">data insight</router-link>
         <router-link class="nav-item" to="/normal_user">personal data</router-link>
       </nav>
 
@@ -54,7 +54,7 @@
                 <th class="py-2">Username</th>
                 <th class="py-2">Email</th>
                 <th class="py-2">Role</th>
-                <th class="py-2">Status</th>
+                <th class="py-2">Delete</th>
               </tr>
             </thead>
 
@@ -70,12 +70,13 @@
                 <td class="py-3">{{ user.email }}</td>
                 <td class="py-3">{{ user.role }}</td>
                 <td class="py-3">
-                  <span
-                    class="px-2 py-1 rounded text-sm text-white"
-                    :class="user.active ? 'bg-green-500' : 'bg-gray-400'"
+                  <button
+                    @click.stop="openDeleteConfirm(user)"
+                    class="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
+                    title="Delete user"
                   >
-                    {{ user.active ? 'Active' : 'Disabled' }}
-                  </span>
+                    Delete
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -94,16 +95,6 @@
             <p class="text-gray-600"><strong>Username:</strong> {{ selectedUser.username }}</p>
             <p class="text-gray-600"><strong>Email:</strong> {{ selectedUser.email }}</p>
             <p class="text-gray-600"><strong>Role:</strong> {{ selectedUser.role }}</p>
-            
-            <p class="text-gray-600">
-              <strong>Status:</strong>
-              <span
-                class="ml-2 px-2 py-1 rounded text-sm text-white"
-                :class="selectedUser.active ? 'bg-green-500' : 'bg-gray-400'"
-              >
-                {{ selectedUser.active ? 'Active' : 'Disabled' }}
-              </span>
-            </p>
 
             <p class="text-gray-600"><strong>Created At:</strong> {{ selectedUser.createdAt }}</p>
           </div>
@@ -138,6 +129,52 @@
 
     </main>
 
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4 backdrop-blur-[2px]"
+      @click.self="cancelDelete"
+    >
+      <section class="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+        <header class="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75V4H3.5a.75.75 0 000 1.5h.31l.72 10.12A2.75 2.75 0 007.27 18h5.46a2.75 2.75 0 002.74-2.38l.72-10.12h.31a.75.75 0 000-1.5H14v-.25A2.75 2.75 0 0011.25 1h-2.5zM7.5 4v-.25c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V4h-5zm1.25 4.25a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm4 0a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold leading-6 text-gray-900">Delete this user?</h2>
+            <p class="mt-0.5 text-sm leading-5 text-gray-500">This action cannot be undone.</p>
+          </div>
+        </header>
+
+        <div class="space-y-4 px-5 py-5">
+          <p class="text-sm text-gray-600">
+            The selected account
+            <span v-if="pendingDeleteUser" class="font-medium text-gray-900">{{ pendingDeleteUser.username }}</span>
+            will be removed from the system user list.
+          </p>
+          <p v-if="pendingDeleteUser" class="truncate text-sm text-gray-500">{{ pendingDeleteUser.email }}</p>
+        </div>
+
+        <footer class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4">
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmDeleteUser"
+            class="rounded-md border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
+          >
+            Confirm Delete
+          </button>
+        </footer>
+      </section>
+    </div>
+
   </div>
 </template>
 
@@ -155,7 +192,6 @@ const users = ref([
     username: "alice",
     email: "alice@example.com",
     role: "Researcher",
-    active: true,
     projectCount: 5,
     fileCount: 12,
     imageCount: 8,
@@ -166,7 +202,6 @@ const users = ref([
     username: "bob",
     email: "bob@example.com",
     role: "Admin",
-    active: true,
     projectCount: 12,
     fileCount: 30,
     imageCount: 15,
@@ -177,7 +212,6 @@ const users = ref([
     username: "carol",
     email: "carol@example.com",
     role: "Researcher",
-    active: false,
     projectCount: 2,
     fileCount: 4,
     imageCount: 1,
@@ -190,10 +224,36 @@ const searchKeyword = ref("");
 
 // Currently Selected User
 const selectedUser = ref(null);
+const showDeleteConfirm = ref(false);
+const pendingDeleteUser = ref(null);
 
 // Select User Function
 const selectUser = (user) => {
   selectedUser.value = user;
+};
+
+const openDeleteConfirm = (user) => {
+  pendingDeleteUser.value = user;
+  showDeleteConfirm.value = true;
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  pendingDeleteUser.value = null;
+};
+
+// Delete User Function
+const confirmDeleteUser = () => {
+  const user = pendingDeleteUser.value;
+  if (!user) return;
+
+  users.value = users.value.filter((item) => item.id !== user.id);
+
+  if (selectedUser.value?.id === user.id) {
+    selectedUser.value = null;
+  }
+
+  cancelDelete();
 };
 
 // Search Filter Logic
