@@ -60,10 +60,11 @@
             </p>
 
             <p class="text-gray-600">
-              <strong>Created At:</strong> {{ profile.createdAt }}
+             
             </p>
 
             <button
+              @click="openSaveConfirm"
               class="mt-4 w-full bg-blue-600 py-2 text-white rounded-lg hover:bg-blue-700"
             >
               Save Changes
@@ -96,7 +97,7 @@
             <p class="text-red-600" v-if="passwordError">{{ passwordError }}</p>
 
             <button
-              @click="changePassword"
+              @click="openPasswordConfirm"
               class="mt-3 w-full bg-blue-600 py-2 text-white rounded-lg hover:bg-blue-700"
             >
               Update Password
@@ -136,6 +137,48 @@
 
     </main>
 
+    <!-- Confirm Dialog -->
+    <div
+      v-if="showConfirmDialog"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4 backdrop-blur-[2px]"
+      @click.self="cancelConfirm"
+    >
+      <section class="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+        <header class="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold leading-6 text-gray-900">{{ confirmDialogTitle }}</h2>
+            <p class="mt-0.5 text-sm leading-5 text-gray-500">{{ confirmDialogMessage }}</p>
+          </div>
+        </header>
+
+        <div class="space-y-4 px-5 py-5">
+          <p class="text-sm text-gray-600">{{ confirmDialogContent }}</p>
+        </div>
+
+        <footer class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4">
+          <button
+            type="button"
+            @click="cancelConfirm"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="confirmAction"
+            class="rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+          >
+            Confirm
+          </button>
+        </footer>
+      </section>
+    </div>
+
   </div>
 </template>
 
@@ -165,66 +208,163 @@ const password = ref({
 const passwordError = ref("");
 const profileError = ref("");
 
-/* ------------------------ Upload History (Mock Data) ------------------------ */
-const uploadHistory = ref([
-  {
-    id: 101,
-    type: "file",
-    fileName: "experiment_report_final.pdf",
-    uploadTimestamp: "2025-11-26 10:30"
-  },
-  {
-    id: 102,
-    type: "image",
-    fileName: "reaction_setup.jpg",
-    uploadTimestamp: "2025-11-26 11:05"
-  }
-]);
+/* ------------------------ Confirm Dialog ------------------------ */
+const showConfirmDialog = ref(false);
+const confirmDialogTitle = ref("");
+const confirmDialogMessage = ref("");
+const confirmDialogContent = ref("");
+const pendingAction = ref(null); // 'save' or 'password'
+
+/* ------------------------ Upload History ------------------------ */
+const uploadHistory = ref([]);
 
 /* ------------------------ Get User Info ------------------------ */
 const getUserInfo = async () => {
   try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.username) {
-      router.push("/login");
-      return;
+    const token = localStorage.getItem("token");
+    const response = await fetch("/api/v1/users/current", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch user info");
     }
-
-    const response = await request.get(`/auth/me?username=${user.username}`);
-    if (response.code === 200) {
+    
+    const result = await response.json();
+    if (result.code === 200) {
       profile.value = {
-        username: response.data.username,
-        email: response.data.email || "",
-        role: response.data.role,
-        createdAt: "2025-01-12" // 从数据库获取
+        username: result.data.username,
+        email: result.data.email || "",
+        role: result.data.role,
+        createdAt: result.data.createdAt || "" // Get from API
       };
     } else {
-      profileError.value = response.message || "获取用户信息失败";
+      profileError.value = result.message || "Failed to fetch user info";
     }
   } catch (error) {
-    console.error("获取用户信息失败:", error);
-    profileError.value = "获取用户信息失败";
+    console.error("Failed to fetch user info:", error);
+    profileError.value = "Failed to fetch user info";
+  }
+};
+
+/* ------------------------ Save Profile ------------------------ */
+const saveProfile = async () => {
+  profileError.value = "";
+  
+  if (!profile.value.email) {
+    profileError.value = "Email is required";
+    return;
+  }
+  
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch("/api/v1/users/profile", {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: profile.value.email,
+        displayName: profile.value.username
+      })
+    });
+    
+    const result = await response.json();
+    if (result.code === 200) {
+      console.log("Profile saved successfully");
+      // Refresh user info
+      await getUserInfo();
+      cancelConfirm();
+    } else {
+      profileError.value = result.message || "Failed to save profile";
+    }
+  } catch (error) {
+    console.error("Failed to save profile:", error);
+    profileError.value = "Failed to save profile";
+  }
+};
+
+/* ------------------------ Confirm Dialog Functions ------------------------ */
+const openSaveConfirm = () => {
+  if (!profile.value.email) {
+    profileError.value = "Email is required";
+    return;
+  }
+  confirmDialogTitle.value = "Save Profile Changes?";
+  confirmDialogMessage.value = "Are you sure you want to save these changes?";
+  confirmDialogContent.value = `Your email will be updated to: ${profile.value.email}`;
+  pendingAction.value = "save";
+  showConfirmDialog.value = true;
+};
+
+const openPasswordConfirm = () => {
+  if (!password.value.old || !password.value.new1 || !password.value.new2) {
+    passwordError.value = "All fields are required";
+    return;
+  }
+  if (password.value.new1 !== password.value.new2) {
+    passwordError.value = "The new passwords do not match";
+    return;
+  }
+  if (password.value.old === password.value.new1) {
+    passwordError.value = "The new password cannot be the same as the old password";
+    return;
+  }
+  confirmDialogTitle.value = "Update Password?";
+  confirmDialogMessage.value = "Are you sure you want to update your password?";
+  confirmDialogContent.value = "Your password will be updated to the new value you entered.";
+  pendingAction.value = "password";
+  showConfirmDialog.value = true;
+};
+
+const cancelConfirm = () => {
+  showConfirmDialog.value = false;
+  pendingAction.value = null;
+};
+
+const confirmAction = async () => {
+  if (pendingAction.value === "save") {
+    await saveProfile();
+  } else if (pendingAction.value === "password") {
+    await changePassword();
+  }
+};
+
+/* ------------------------ Get Upload History ------------------------ */
+const getUploadHistory = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch("/api/v1/users/upload-history", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch upload history");
+    }
+    
+    const result = await response.json();
+    if (result.code === 200) {
+      uploadHistory.value = result.data;
+    } else {
+      console.error("Failed to fetch upload history:", result.message);
+    }
+  } catch (error) {
+    console.error("Failed to fetch upload history:", error);
   }
 };
 
 /* ------------------------ Change Password ------------------------ */
 const changePassword = async () => {
   passwordError.value = "";
-
-  if (!password.value.old || !password.value.new1 || !password.value.new2) {
-    passwordError.value = "All fields are required";
-    return;
-  }
-
-  if (password.value.new1 !== password.value.new2) {
-    passwordError.value = "The new passwords do not match";
-    return;
-  }
-
-  if (password.value.old === password.value.new1) {
-    passwordError.value = "The new password cannot be the same as the old password";
-    return;
-  }
 
   try {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -239,18 +379,19 @@ const changePassword = async () => {
     });
 
     if (response.code === 200) {
-      alert("Password successfully changed");
+      console.log("Password successfully changed");
       password.value = {
         old: "",
         new1: "",
         new2: ""
       };
+      cancelConfirm();
     } else {
-      passwordError.value = response.message || "修改密码失败";
+      passwordError.value = response.message || "Failed to change password";
     }
   } catch (error) {
-    console.error("修改密码失败:", error);
-    passwordError.value = "修改密码失败";
+    console.error("Failed to change password:", error);
+    passwordError.value = "Failed to change password";
   }
 };
 
@@ -264,6 +405,7 @@ const logout = () => {
 /* ------------------------ Mounted ------------------------ */
 onMounted(() => {
   getUserInfo();
+  getUploadHistory();
 });
 </script>
 

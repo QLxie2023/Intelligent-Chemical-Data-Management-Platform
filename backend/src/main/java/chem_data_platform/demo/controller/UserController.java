@@ -1,7 +1,10 @@
 package chem_data_platform.demo.controller;
 
+import chem_data_platform.demo.dto.UploadHistoryDTO;
 import chem_data_platform.demo.dto.UserDetailDTO;
 import chem_data_platform.demo.dto.UserInfoDTO;
+import chem_data_platform.demo.entity.FileInfo;
+import chem_data_platform.demo.entity.ImageInfo;
 import chem_data_platform.demo.entity.User;
 import chem_data_platform.demo.repository.FileInfoRepository;
 import chem_data_platform.demo.repository.ImageInfoRepository;
@@ -14,6 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -129,6 +135,39 @@ public class UserController {
             e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.serverError("Failed to fetch current user: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<ApiResponse<UserInfoDTO>> updateProfile(@RequestBody java.util.Map<String, String> data) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User user = userRepository.findByUsername(auth.getName()).get();
+            if (data.containsKey("email")) user.setEmail(data.get("email"));
+            userRepository.save(user);
+            return ResponseEntity.ok(ApiResponse.success("OK", new UserInfoDTO(user.getId().intValue(), user.getUsername(), user.getEmail(), user.getDisplayName(), user.getRole())));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ApiResponse.serverError(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/upload-history")
+    public ResponseEntity<ApiResponse<List<UploadHistoryDTO>>> getUploadHistory() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            User user = userRepository.findByUsername(auth.getName()).get();
+            DateTimeFormatter f = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            List<UploadHistoryDTO> history = new ArrayList<>();
+            for (FileInfo file : fileInfoRepository.findByUploaderIdOrderByUploadTimestampDesc(user.getId())) {
+                history.add(new UploadHistoryDTO(file.getId(), "file", file.getFileName(), file.getUploadTimestamp() != null ? file.getUploadTimestamp().format(f) : ""));
+            }
+            for (ImageInfo img : imageInfoRepository.findByUploaderIdOrderByUploadTimestampDesc(user.getId())) {
+                history.add(new UploadHistoryDTO(img.getImageId(), "image", img.getImageName(), img.getUploadTimestamp() != null ? img.getUploadTimestamp().format(f) : ""));
+            }
+            history.sort(Comparator.comparing(UploadHistoryDTO::getUploadTimestamp).reversed());
+            return ResponseEntity.ok(ApiResponse.success("OK", history));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ApiResponse.serverError(e.getMessage()));
         }
     }
 
