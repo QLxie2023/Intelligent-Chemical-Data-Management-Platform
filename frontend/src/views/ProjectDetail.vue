@@ -1,18 +1,21 @@
 <template>
-  <div class="p-8">
-    <button @click="router.back()" class="text-blue-600 hover:underline mb-4">
-      ← Return to project list
-    </button>
-    <router-link to="/dashboard" class="ml-4 text-blue-600 hover:underline">
-      Dashboard
-    </router-link>
+  <div class="min-h-screen bg-gray-100 px-8">
+    <div class="fixed top-8 left-8 z-10">
+      <button @click="router.back()" class="text-blue-600 hover:underline">
+        ← Return to project list
+      </button>
+      <router-link to="/dashboard" class="ml-4 text-blue-600 hover:underline">
+        Dashboard
+      </router-link>
+    </div>
 
-    <div v-if="loading" class="text-lg text-gray-500">Loading project details...</div>
-    <div v-else-if="error" class="text-red-600">Load error: {{ error }}</div>
+    <div class="pt-16">
+      <div v-if="loading" class="text-lg text-gray-500">Loading project details...</div>
+      <div v-else-if="error" class="text-red-600">Load error: {{ error }}</div>
 
-    <div v-else-if="project" class="bg-white rounded-xl shadow-xl p-6">
-      <h1 class="text-4xl font-bold text-blue-800 mb-2">{{ project.name }}</h1>
-      <p class="text-gray-600 mb-6">
+      <div v-else-if="project" class="bg-white rounded-xl shadow-xl pt-10 pb-6 px-10 max-w-6xl mx-auto">
+      <h1 class="text-4xl font-bold text-blue-800 mb-4">{{ project.name }}</h1>
+      <p class="text-gray-600 mb-8">
         Project ID: <span class="font-mono">{{ project.projectId }}</span> |
         Owner: <span class="font-semibold">{{ project.ownerUsername }}</span> |
         Visibility:
@@ -21,94 +24,80 @@
         </span>
       </p>
 
-      <div class="border-t pt-4">
-        <h2 class="text-2xl font-semibold mb-2">Project Description</h2>
-        <p class="text-gray-800 leading-relaxed">{{ project.description }}</p>
+      <div class="border-t border-gray-200 pt-6 mb-8">
+        <h2 class="text-2xl font-semibold mb-4">Project Description</h2>
+        <p class="text-gray-800 leading-relaxed text-lg">{{ project.description }}</p>
       </div>
 
-      <div class="mt-10 border-t pt-6">
-        <h2 class="text-2xl font-semibold mb-4">Upload Project Files</h2>
+      <div class="border-t border-gray-200 pt-8 mb-8">
+        <h2 class="text-2xl font-semibold mb-6">Upload Project Files</h2>
 
-        <div class="mb-4">
-          <p class="font-semibold mb-1">Upload document (.pdf / .docx / .xlsx / .csv)</p>
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <p class="font-semibold mb-3">Upload document (.pdf / .docx / .xlsx / .csv)</p>
           <input type="file" ref="fileUploadInput" @change="handleFileSelect" class="hidden" />
-          <button type="button" @click="fileUploadInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Choose File</button>
+          <button type="button" @click="fileUploadInput.click()" class="px-5 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition">Choose File</button>
           <button
             @click="uploadFile"
-            class="ml-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            class="ml-3 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Upload Document
           </button>
-          <p v-if="fileMsg" class="mt-2 text-sm" :class="fileMsg.includes('successful') ? 'text-green-600' : 'text-gray-600'">{{ fileMsg }}</p>
+          <p v-if="fileMsg" class="mt-3 text-sm" :class="fileMsg.includes('successful') ? 'text-green-600' : 'text-gray-600'">{{ fileMsg }}</p>
         </div>
 
-        <div class="mb-4">
-          <p class="font-semibold mb-1">Upload image (.jpg / .png)</p>
+        <div class="p-4 bg-gray-50 rounded-lg">
+          <p class="font-semibold mb-3">Upload image (.jpg / .png)</p>
           <input type="file" ref="imageUploadInput" @change="handleImageSelect" class="hidden" />
-          <button type="button" @click="imageUploadInput.click()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">Choose Image</button>
+          <button type="button" @click="imageUploadInput.click()" class="px-5 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition">Choose Image</button>
           <button
             @click="uploadImage"
-            class="ml-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            class="ml-3 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
           >
             Upload Image
           </button>
-          <p v-if="imageMsg" class="mt-2 text-sm" :class="imageMsg.includes('successful') ? 'text-green-600' : 'text-gray-600'">{{ imageMsg }}</p>
+          <p v-if="imageMsg" class="mt-3 text-sm" :class="imageMsg.includes('successful') ? 'text-green-600' : 'text-gray-600'">{{ imageMsg }}</p>
         </div>
       </div>
 
-      <div class="mt-10 border-t pt-6">
-        <h2 class="text-2xl font-semibold mb-4">Uploaded Files</h2>
+      <div class="border-t border-gray-200 pt-8">
+        <h2 class="text-2xl font-semibold mb-6">Uploaded Files</h2>
 
-        <div v-if="files.length === 0" class="text-gray-500">No files available.</div>
+        <div v-if="files.length === 0" class="text-gray-500 py-8 text-center">No files available.</div>
 
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
             v-for="file in files"
             :key="file.fileId || file.imageId"
-            class="p-4 pb-12 bg-gray-50 rounded-lg shadow hover:shadow-md transition cursor-pointer relative"
+            class="p-6 bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer relative min-h-[140px]"
             @click="openPreview(file)"
           >
-            <p class="font-semibold text-blue-700">{{ file.fileName || file.imageName }}</p>
-            <p class="text-sm text-gray-500 mt-1">Type: {{ file.fileType || 'image' }}</p>
-            <p class="text-xs text-gray-400">Upload time: {{ file.uploadTimestamp }}</p>
+            <p class="font-semibold text-blue-700 text-lg">{{ file.fileName || file.imageName }}</p>
+            <p class="text-sm text-gray-500 mt-2">Type: {{ file.fileType || 'image' }}</p>
+            <p class="text-xs text-gray-400 mt-1">Upload time: {{ file.uploadTimestamp }}</p>
             <button
               @click.stop="openDeleteConfirm(file)"
-              class="absolute bottom-3 right-3 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
+              class="absolute bottom-4 right-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
               title="Delete this file"
             >
               Delete
             </button>
             <span
               v-if="file._analysisStatus === 'PROCESSING' || file._analysisStatus === 'PENDING'"
-              class="absolute top-2 right-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full"
+              class="absolute top-3 right-3 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full"
             >Analyzing...</span>
             <span
               v-else-if="file._analysisStatus === 'COMPLETED'"
-              class="absolute top-2 right-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full"
+              class="absolute top-3 right-3 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full"
             >Analyzed</span>
             <span
               v-else-if="file._analysisStatus === 'FAILED'"
-              class="absolute top-2 right-2 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full"
+              class="absolute top-3 right-3 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full"
             >Failed</span>
           </div>
         </div>
       </div>
 
-      <div class="mt-10 border-t pt-6">
-        <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">
-          Knowledge Graph Visualization
-        </h2>
-        <p class="text-gray-600 mb-4 text-sm">
-          This knowledge graph is generated from extracted entities and relations.
-        </p>
-        <div class="bg-gray-50 rounded-lg shadow-inner p-3">
-          <iframe
-            src="http://localhost:8000"
-            class="w-full h-[600px] rounded-lg border"
-            frameborder="0"
-          ></iframe>
-        </div>
-      </div>
+
 
       <!-- Preview modal -->
       <div
@@ -467,6 +456,7 @@
           </button>
         </footer>
       </section>
+    </div>
     </div>
   </div>
 </template>

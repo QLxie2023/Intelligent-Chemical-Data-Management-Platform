@@ -553,7 +553,6 @@ const confirmDeleteProject = async () => {
   try {
     const res = await request.post(`/projects/${project.projectId}/delete`);
     if (res.code === 200) {
-      alert('Project deleted successfully');
       showDeleteConfirm.value = false;
       pendingDeleteProject.value = null;
       fetchProjects();
