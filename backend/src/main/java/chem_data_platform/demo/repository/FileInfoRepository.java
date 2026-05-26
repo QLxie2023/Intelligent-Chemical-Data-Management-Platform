@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
+    long countByUploaderId(Long uploaderId);
 }

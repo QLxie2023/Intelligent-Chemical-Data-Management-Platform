@@ -71,12 +71,14 @@
                 <td class="py-3">{{ user.role }}</td>
                 <td class="py-3">
                   <button
+                    v-if="isAdmin"
                     @click.stop="openDeleteConfirm(user)"
                     class="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:border-red-300 hover:bg-red-100 transition"
                     title="Delete user"
                   >
                     Delete
                   </button>
+                  <span v-else class="text-gray-400 text-xs">No permission</span>
                 </td>
               </tr>
             </tbody>
@@ -95,8 +97,6 @@
             <p class="text-gray-600"><strong>Username:</strong> {{ selectedUser.username }}</p>
             <p class="text-gray-600"><strong>Email:</strong> {{ selectedUser.email }}</p>
             <p class="text-gray-600"><strong>Role:</strong> {{ selectedUser.role }}</p>
-
-            <p class="text-gray-600"><strong>Created At:</strong> {{ selectedUser.createdAt }}</p>
           </div>
 
           <hr class="my-6 border-gray-100">
@@ -180,44 +180,21 @@
 
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-// Mock User Data
-const users = ref([
-  {
-    id: 1,
-    username: "alice",
-    email: "alice@example.com",
-    role: "Researcher",
-    projectCount: 5,
-    fileCount: 12,
-    imageCount: 8,
-    createdAt: "2025-01-10"
-  },
-  {
-    id: 2,
-    username: "bob",
-    email: "bob@example.com",
-    role: "Admin",
-    projectCount: 12,
-    fileCount: 30,
-    imageCount: 15,
-    createdAt: "2024-11-22"
-  },
-  {
-    id: 3,
-    username: "carol",
-    email: "carol@example.com",
-    role: "Researcher",
-    projectCount: 2,
-    fileCount: 4,
-    imageCount: 1,
-    createdAt: "2023-07-01"
-  },
-]);
+// 用户列表数据（从后端获取）
+const users = ref([]);
+
+// 当前登录用户信息（用于判断权限）
+const currentUser = ref(null);
+
+// 判断当前用户是否为管理员
+const isAdmin = computed(() => {
+  return currentUser.value && currentUser.value.role === "ROLE_ADMIN";
+});
 
 // Search Keyword
 const searchKeyword = ref("");
@@ -227,9 +204,96 @@ const selectedUser = ref(null);
 const showDeleteConfirm = ref(false);
 const pendingDeleteUser = ref(null);
 
+// 从后端获取用户列表
+const fetchUsers = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch("/api/v1/users/list", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch users");
+    }
+    
+    const result = await response.json();
+    if (result.code === 200) {
+      // Convert user data to frontend format
+      users.value = result.data.map(user => ({
+        id: user.userId,  // Use userId from backend response
+        username: user.username,
+        email: user.email,
+        role: user.role.replace("ROLE_", ""), // Remove ROLE_ prefix
+        displayName: user.displayName,
+        projectCount: 0,
+        fileCount: 0,
+        imageCount: 0,
+        createdAt: ""
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+};
+
+// 获取当前用户信息
+const fetchCurrentUser = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch("/api/v1/users/current", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch current user");
+    }
+    
+    const result = await response.json();
+    if (result.code === 200) {
+      currentUser.value = result.data;
+    }
+  } catch (error) {
+    console.error("Error fetching current user:", error);
+  }
+};
+
 // Select User Function
-const selectUser = (user) => {
+const selectUser = async (user) => {
   selectedUser.value = user;
+  
+  // Fetch user detail with statistics from backend
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`/api/v1/users/${user.id}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.code === 200 && result.data) {
+        selectedUser.value = {
+          ...selectedUser.value,
+          projectCount: result.data.projectCount || 0,
+          fileCount: result.data.fileCount || 0,
+          imageCount: result.data.imageCount || 0
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching user detail:", error);
+  }
 };
 
 const openDeleteConfirm = (user) => {
@@ -243,14 +307,47 @@ const cancelDelete = () => {
 };
 
 // Delete User Function
-const confirmDeleteUser = () => {
+const confirmDeleteUser = async () => {
   const user = pendingDeleteUser.value;
-  if (!user) return;
+  if (!user || !user.id) {
+    console.error("Delete failed: Invalid user or user ID");
+    cancelDelete();
+    return;
+  }
 
-  users.value = users.value.filter((item) => item.id !== user.id);
+  // Check if trying to delete own account
+  if (currentUser.value && currentUser.value.userId === user.id) {
+    console.error("Delete failed: Cannot delete your own account");
+    cancelDelete();
+    return;
+  }
 
-  if (selectedUser.value?.id === user.id) {
-    selectedUser.value = null;
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`/api/v1/users/${user.id}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (result.code === 200) {
+      // Delete successful, update frontend list
+      users.value = users.value.filter((item) => item.id !== user.id);
+      
+      if (selectedUser.value?.id === user.id) {
+        selectedUser.value = null;
+      }
+      
+      console.log("Delete successful");
+    } else {
+      console.error("Delete failed:", result.message || "Unknown error");
+    }
+  } catch (error) {
+    console.error("Error deleting user:", error);
   }
 
   cancelDelete();
@@ -266,6 +363,12 @@ const filteredUsers = computed(() => {
     u.username.toLowerCase().includes(key) ||
     u.email.toLowerCase().includes(key)
   );
+});
+
+// 页面加载时获取用户列表和当前用户信息
+onMounted(() => {
+  fetchUsers();
+  fetchCurrentUser();
 });
 
 // Logout Function

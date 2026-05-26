@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ImageInfoRepository extends JpaRepository<ImageInfo, Long> {
+    long countByUploaderId(Long uploaderId);
 }
