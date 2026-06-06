@@ -12,38 +12,19 @@ import N_User from "../views/N_User.vue";
 const routes = [
   { path: "/", redirect: "/project-management" },
   { path: "/login", component: Login },
-  { path: "/dashboard", name: "Dashboard", component: Dashboard },
-  { path: "/project-management", name: "ProjectManagement", component: ProjectManagement },
-  { path: "/register", component: Register },
-  { path: "/search", component: Search},
-  { path: "/user", component: User},
-  { path:"/normal_user", component: N_User},
+  { path: "/dashboard", name: "Dashboard", component: Dashboard, meta: { requiresAuth: true } },
+  { path: "/project-management", name: "ProjectManagement", component: ProjectManagement, meta: { requiresAuth: true } },
+  { path: "/register", component: Register, meta: { requiresAuth: true } },
+  { path: "/search", component: Search, meta: { requiresAuth: true } },
+  { path: "/user", component: User, meta: { requiresAuth: true } },
+  { path:"/normal_user", component: N_User, meta: { requiresAuth: true } },
   {
     path: '/projects/:id', // 动态匹配 /projects/1, /projects/2 等
     name: 'ProjectDetail',
     component: ProjectDetail,
+    meta: { requiresAuth: true }
     // props: true // 允许将路由参数作为 props 传递给组件 (可选)
   }
-  // {
-  //   path: "/",
-  //   component: Home,
-  //   meta: { requiresAuth: true }   
-  // }, 
-  // {
-  //   path: "/register",
-  //   component: Register,
-  //   meta: { requiresAuth: true }   
-  // },
-  // {
-  //   path: "/user",
-  //   component: User,
-  //   meta: { requiresAuth: true }   
-  // },
-  // {
-  //   path: "/search",
-  //   component: Search,
-  //   meta: { requiresAuth: true } 
-  // },
 ];
 
 const router = createRouter({
