@@ -339,34 +339,28 @@
                 </div>
 
                 <!-- Save button -->
-                <div class="flex gap-3 mt-4">
+                <div class="flex gap-4 mt-4">
                   <button
                     @click="saveAnalysisResult"
                     :disabled="saving"
                     :class="editForm.isConfirmed
-                      ? 'px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition'
-                      : 'px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition'"
+                      ? 'flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition'
+                      : 'flex-1 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition'"
                   >
                     {{ saving ? 'Saving...' : (editForm.isConfirmed ? 'Update Confirmed Results' : 'Confirm & Save Results') }}
                   </button>
                   <button
                     @click="reAnalyze(currentFileId)"
                     :disabled="analysisStatus === 'PROCESSING'"
-                    class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
+                    class="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
                   >
                     Re-analyze
                   </button>
                   <button
                     @click="downloadAnalysisExcel"
-                    class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+                    class="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
                   >
                     Download Report
-                  </button>
-                  <button
-                    @click="loadKnowledgeGraph"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                  >
-                    View Knowledge Graph
                   </button>
                 </div>
 
@@ -375,26 +369,7 @@
                   {{ saveMsg }}
                 </p>
 
-                <!-- Knowledge graph panel -->
-                <div v-if="showGraph" class="mt-4 border-t pt-4">
-                  <h4 class="font-semibold mb-2">Knowledge Graph</h4>
-                  <div v-if="graphData" class="border rounded-lg p-4 max-h-[300px] overflow-auto">
-                    <p class="font-semibold mb-1 text-sm">Nodes (Entities)</p>
-                    <ul class="list-disc pl-5 text-sm text-gray-700 mb-3">
-                      <li v-for="node in graphData.nodes" :key="node.id">
-                        {{ node.id }} <span class="text-gray-400">({{ node.type }})</span>
-                      </li>
-                    </ul>
-                    <p class="font-semibold mb-1 text-sm">Relations</p>
-                    <ul class="list-disc pl-5 text-sm text-gray-700">
-                      <li v-for="(edge, index) in graphData.edges" :key="index">
-                        {{ edge.source }}
-                        <span class="text-blue-600 font-semibold">— {{ edge.relation }} →</span>
-                        {{ edge.target }}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+
               </div>
 
               <!-- No status yet -->
@@ -512,8 +487,7 @@ const editForm = ref({
 
 const newKeyword = ref('');
 
-const graphData = ref(null);
-const showGraph = ref(false);
+
 
 let analysisTimer = null;
 let globalStatusTimer = null;
@@ -631,7 +605,6 @@ async function openPreview(file) {
   analysisStatus.value = 'PROCESSING';
   analysisMsg.value = 'Loading analysis status...';
   saveMsg.value = '';
-  showGraph.value = false;
   manualKeywords.value = [];
   manualKeywordInput.value = '';
   manualSaving.value = false;
@@ -1167,22 +1140,6 @@ async function downloadAnalysisExcel() {
   } catch (err) {
     console.error('Download Excel error:', err);
     saveMsg.value = 'Download failed, please ensure analysis is complete';
-  }
-}
-
-async function loadKnowledgeGraph() {
-  if (!currentFileId.value) return;
-  try {
-    const res = await request.get(`/api/v1/graphs/${currentFileId.value}/visualization`);
-    if (res.code === 200 && res.data) {
-      graphData.value = res.data;
-      showGraph.value = true;
-    } else {
-      alert('Knowledge graph data is empty');
-    }
-  } catch (e) {
-    console.error(e);
-    alert('Failed to load knowledge graph');
   }
 }
 
