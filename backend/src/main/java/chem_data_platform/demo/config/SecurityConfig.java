@@ -48,8 +48,7 @@ public class SecurityConfig {
             "http://127.0.0.1:5173", 
             "http://172.20.10.14:3000", 
             "http://172.20.10.14:5173",
-            "http://localhost:8081",
-            "http://localhost:8000"
+            "http://localhost:8081"
         ));
         configuration.setAllowedMethods(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

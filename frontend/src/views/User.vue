@@ -185,13 +185,13 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-// 用户列表数据（从后端获取）
+// User list data fetched from the backend
 const users = ref([]);
 
-// 当前登录用户信息（用于判断权限）
+// Current logged-in user information used for permission checks
 const currentUser = ref(null);
 
-// 判断当前用户是否为管理员
+// Check whether the current user is an administrator
 const isAdmin = computed(() => {
   return currentUser.value && currentUser.value.role === "ROLE_ADMIN";
 });
@@ -204,7 +204,7 @@ const selectedUser = ref(null);
 const showDeleteConfirm = ref(false);
 const pendingDeleteUser = ref(null);
 
-// 从后端获取用户列表
+// Fetch the user list from the backend
 const fetchUsers = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -240,7 +240,7 @@ const fetchUsers = async () => {
   }
 };
 
-// 获取当前用户信息
+// Get current user information
 const fetchCurrentUser = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -365,7 +365,7 @@ const filteredUsers = computed(() => {
   );
 });
 
-// 页面加载时获取用户列表和当前用户信息
+// Fetch the user list and current user information when the page loads
 onMounted(() => {
   fetchUsers();
   fetchCurrentUser();

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 邀请码实体
+ * Invitation code entity
  */
 @Entity
 @Table(name = "invitation_codes")
@@ -23,7 +23,7 @@ public class InvitationCode {
     @Column(name = "code", unique = true, nullable = false)
     private String code;
 
-    // role 在数据库中为 ENUM，但在实体中使用 String 存储，移除 @Enumerated 注解
+    // role is an ENUM in the database, but is stored as a String in the entity, so @Enumerated is removed
     @Column(name = "role", nullable = false, length = 50)
     private String role; // ROLE_ADMIN, ROLE_RESEARCHER
 
@@ -31,10 +31,10 @@ public class InvitationCode {
     private Boolean used;
 
     @Column(name = "used_by")
-    private Long usedById; // 使用者的 user id
+    private Long usedById; // User ID of the user who used it
 
     @Column(name = "used_at")
-    private LocalDateTime usedAt; // 使用时间
+    private LocalDateTime usedAt; // Used time
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -60,13 +60,13 @@ public class DataUploadController {    @Autowired
     private ImageInfoRepository imageInfoRepository;
 
     @Autowired
-    private ApplicationContext applicationContext;  // 用于获取代理对象以启用 @Transactional
+    private ApplicationContext applicationContext;  // Used to obtain the proxy object so @Transactional is applied
     
     @Value("${upload.base-path:C:/uploads/chem_data_platform}")
     private String uploadBasePath;/**
-     * 分析文件
+     * Analyze file
      * POST /api/v1/files/{fileId}/analysis
-     * 触发异步文件分析任务
+     * Trigger an asynchronous file analysis task
      */
     @PostMapping("/files/{fileId}/analysis")
     public ResponseEntity<ApiResponse<?>> analyzeFile(
@@ -76,13 +76,13 @@ public class DataUploadController {    @Autowired
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             Long projectId;
@@ -92,7 +92,7 @@ public class DataUploadController {    @Autowired
                 Optional<ImageInfo> imgOpt = imageInfoRepository.findById(fileId);
                 if (!imgOpt.isPresent()) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("图片不存在"));
+                        .body(ApiResponse.notFound("Image does not exist"));
                 }
                 ImageInfo imageInfo = imgOpt.get();
                 projectId = imageInfo.getProjectId();
@@ -102,7 +102,7 @@ public class DataUploadController {    @Autowired
                 Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
                 if (!fileOpt.isPresent()) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("文件不存在"));
+                        .body(ApiResponse.notFound("File does not exist"));
                 }
                 FileInfo fileInfo = fileOpt.get();
                 projectId = fileInfo.getProjectId();
@@ -117,16 +117,16 @@ public class DataUploadController {    @Autowired
             result.put("status", "PROCESSING");
             result.put("message", "AI analysis started...");
 
-            return ResponseEntity.ok(ApiResponse.success("分析请求已提交", result));
+            return ResponseEntity.ok(ApiResponse.success("Analysis request submitted", result));
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.badRequest(e.getMessage()));
         }
     }    /**
-     * 异步执行文件分析
-     * 在后台线程中调用 AnalysisService 进行文件分析
-     * 关键：使用 ApplicationContext 获取代理对象，确保 @Transactional 生效
+     * Execute file analysis asynchronously
+     * Call AnalysisService in a background thread to analyze the file
+     * Key point: use ApplicationContext to obtain the proxy object so @Transactional takes effect
      */
     @Async("asyncExecutor")
     public void performAnalysisAsync(Long projectId, Long fileId, File file, String fileType) {
@@ -197,16 +197,16 @@ public class DataUploadController {    @Autowired
     }
 
     /**
-     * 同步保存分析结果到数据库
-     * 由异步线程调用，但实际执行在主线程中（确保事务生效）
+     * Synchronously save analysis results to the database
+     * Called by the async thread, but executed through the proxied service to ensure transactions are applied
      */
     private void saveAnalysisResultSync(Long fileId, String analysisJson) {
         projectService.saveFileAnalysisResult(fileId, analysisJson);
     }
 
     /**
-     * 同步保存分析错误到数据库
-     * 由异步线程调用，但实际执行在主线程中（确保事务生效）
+     * Synchronously save analysis errors to the database
+     * Called by the async thread, but executed through the proxied service to ensure transactions are applied
      */
     private void saveAnalysisErrorSync(Long fileId, String errorMsg) {
         projectService.saveFileAnalysisError(fileId, errorMsg);
@@ -259,13 +259,13 @@ public class DataUploadController {    @Autowired
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             String confirmedData = (String) requestBody.get("confirmedData");
@@ -286,7 +286,7 @@ public class DataUploadController {    @Autowired
             result.put("fileId", fileId);
             result.put("status", "CONFIRMED");
 
-            return ResponseEntity.ok(ApiResponse.success("确认保存成功", result));
+            return ResponseEntity.ok(ApiResponse.success("Confirmed result saved successfully", result));
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -295,9 +295,9 @@ public class DataUploadController {    @Autowired
     }
 
     /**
-     * 获取文件分析结果
+     * Get file analysis result
      * GET /api/v1/files/{fileId}/analysis
-     * 前端轮询此接口查询分析进度
+     * The frontend polls this API to query analysis progress
      */
     @GetMapping("/files/{fileId}/analysis")
     public ResponseEntity<ApiResponse<?>> getAnalysisResult(
@@ -307,13 +307,13 @@ public class DataUploadController {    @Autowired
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             Map<String, Object> analysisData;
@@ -326,7 +326,7 @@ public class DataUploadController {    @Autowired
 
             if (analysisData == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.notFound("文件分析记录不存在"));
+                    .body(ApiResponse.notFound("File analysis record does not exist"));
             }
 
             String status = (String) analysisData.get("status");
@@ -344,20 +344,20 @@ public class DataUploadController {    @Autowired
                 result.put("analysisData", analysisData.get("analysisData"));
                 result.put("confirmedData", analysisData.get("confirmedData"));
                 result.put("isConfirmed", analysisData.get("isConfirmed"));
-                return ResponseEntity.ok(ApiResponse.success("分析完成", result));
+                return ResponseEntity.ok(ApiResponse.success("Analysis completed", result));
             }
             if ("PROCESSING".equals(status)) {
                 result.put("summary", null);
                 result.put("tableData", null);
-                return ResponseEntity.ok(ApiResponse.success("AI 正在读取文献并提取特征...", result));
+                return ResponseEntity.ok(ApiResponse.success("AI is reading the document and extracting features...", result));
             }
             if ("FAILED".equals(status)) {
                 result.put("errorReason", analysisData.get("errorReason"));
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.fail(500, "分析失败", result));
+                    .body(ApiResponse.fail(500, "Analysis failed", result));
             }
 
-            return ResponseEntity.ok(ApiResponse.success("获取分析结果成功", result));
+            return ResponseEntity.ok(ApiResponse.success("Analysis result retrieved successfully", result));
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -366,7 +366,7 @@ public class DataUploadController {    @Autowired
     }
     
     /**
-     * 下载文件分析结果
+     * Download file analysis result
      * GET /api/v1/files/{fileId}/analysis/download
      */
     @GetMapping("/files/{fileId}/analysis/download")
@@ -377,13 +377,13 @@ public class DataUploadController {    @Autowired
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             Map<String, Object> analysisData;
@@ -395,7 +395,7 @@ public class DataUploadController {    @Autowired
 
             if (analysisData == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.notFound("文件分析记录不存在"));
+                    .body(ApiResponse.notFound("File analysis record does not exist"));
             }
 
             String status = (String) analysisData.get("status");
@@ -414,24 +414,24 @@ public class DataUploadController {    @Autowired
                     .body(downloadData);
             } else if ("PROCESSING".equals(status)) {
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(ApiResponse.fail(202, "分析仍在进行中，请稍后再试", null));
+                    .body(ApiResponse.fail(202, "Analysis is still in progress. Please try again later", null));
             } else if ("FAILED".equals(status)) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.fail(500, "分析失败: " + analysisData.get("errorReason"), null));
+                    .body(ApiResponse.fail(500, "Analysis failed: " + analysisData.get("errorReason"), null));
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.badRequest("文件还未开始分析，请先请求分析"));
+                    .body(ApiResponse.badRequest("File analysis has not started yet. Please request analysis first"));
             }
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.serverError("下载失败: " + e.getMessage()));
+                .body(ApiResponse.serverError("Download failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 导出分析结果为 Excel
+     * Export analysis results to Excel
      * GET /api/v1/files/{fileId}/analysis/export-excel
-     * 将 Kimi 返回的 JSON 数据转换为 Excel 文件供下载
+     * Convert JSON analysis data into an Excel file for download
      */
     @GetMapping("/files/{fileId}/analysis/export-excel")
     public ResponseEntity<?> exportAnalysisToExcel(
@@ -441,13 +441,13 @@ public class DataUploadController {    @Autowired
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("无效的认证令牌"));
+                    .body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             String analysisStatus;
@@ -457,7 +457,7 @@ public class DataUploadController {    @Autowired
                 Optional<ImageInfo> imgOpt = imageInfoRepository.findById(fileId);
                 if (!imgOpt.isPresent()) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("图片不存在"));
+                        .body(ApiResponse.notFound("Image does not exist"));
                 }
                 ImageInfo imageInfo = imgOpt.get();
                 analysisStatus = imageInfo.getAnalysisStatus();
@@ -466,7 +466,7 @@ public class DataUploadController {    @Autowired
                 Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
                 if (!fileOpt.isPresent()) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("文件不存在"));
+                        .body(ApiResponse.notFound("File does not exist"));
                 }
                 FileInfo fileInfo = fileOpt.get();
                 analysisStatus = fileInfo.getAnalysisStatus();
@@ -475,12 +475,12 @@ public class DataUploadController {    @Autowired
 
             if (analysisStatus == null || !"COMPLETED".equals(analysisStatus)) {
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(ApiResponse.fail(202, "分析尚未完成，状态: " + analysisStatus, null));
+                    .body(ApiResponse.fail(202, "Analysis is not complete yet. Status: " + analysisStatus, null));
             }
 
             if (analysisData == null || analysisData.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.badRequest("分析数据为空"));
+                    .body(ApiResponse.badRequest("Analysis data is empty"));
             }
 
             String excelFileName = "analysis_" + fileId + "_" + System.currentTimeMillis() + ".xlsx";
@@ -490,7 +490,7 @@ public class DataUploadController {    @Autowired
             
             if (generatedPath == null) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("Excel 生成失败"));
+                    .body(ApiResponse.serverError("Excel generation failed"));
             }
 
             Path filePath = Paths.get(generatedPath);
@@ -504,7 +504,7 @@ public class DataUploadController {    @Autowired
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.serverError("导出 Excel 失败: " + e.getMessage()));
+                .body(ApiResponse.serverError("Excel export failed: " + e.getMessage()));
         }
     }
 
@@ -515,26 +515,26 @@ public class DataUploadController {    @Autowired
             @RequestHeader("Authorization") String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
-            // 权限检查：当前实现仅检查项目是否存在与上传所有者关系
+            // Permission check: the current implementation checks project existence and upload ownership
             String username = jwtUtil.getUsernameFromToken(token);
             if (!projectService.hasProjectPermission(projectId, username)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.forbidden("无上传权限"));
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.forbidden("No upload permission"));
             }
 
             FileUploadResponseDTO dto = projectService.uploadFile(projectId, file, username);
-            return ResponseEntity.ok(ApiResponse.success("文件上传并触发分析（可能异步）", dto));
+            return ResponseEntity.ok(ApiResponse.success("File uploaded and analysis triggered, possibly asynchronously", dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.badRequest(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("上传失败: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("Upload failed: " + e.getMessage()));
         }
     }
 
@@ -545,30 +545,30 @@ public class DataUploadController {    @Autowired
             @RequestHeader("Authorization") String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String username = jwtUtil.getUsernameFromToken(token);
             if (!projectService.hasProjectPermission(projectId, username)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.forbidden("无上传权限"));
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.forbidden("No upload permission"));
             }
 
             ImageUploadResponseDTO dto = projectService.uploadImage(projectId, image, username);
-            return ResponseEntity.ok(ApiResponse.success("图片上传并触发分析（可能异步）", dto));
+            return ResponseEntity.ok(ApiResponse.success("Image uploaded and analysis triggered, possibly asynchronously", dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.badRequest(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("上传失败: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("Upload failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 删除文件
+     * Delete file
      * DELETE /api/v1/files/{fileId}
      */
     @PostMapping("/files/{fileId}/delete")
@@ -577,27 +577,27 @@ public class DataUploadController {    @Autowired
             @RequestHeader("Authorization") String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("无效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             String username = jwtUtil.getUsernameFromToken(token);
             projectService.deleteFile(fileId, username);
 
-            return ResponseEntity.ok(ApiResponse.success("文件删除成功", null));
+            return ResponseEntity.ok(ApiResponse.success("File deleted successfully", null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.badRequest(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("删除失败: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("Delete failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 删除图片
+     * Delete image
      * DELETE /api/v1/images/{imageId}
      */
     @PostMapping("/images/{imageId}/delete")
@@ -606,22 +606,22 @@ public class DataUploadController {    @Autowired
             @RequestHeader("Authorization") String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
 
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("无效的认证令牌"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.unauthorized("Invalid authentication token"));
             }
 
             String username = jwtUtil.getUsernameFromToken(token);
             projectService.deleteImage(imageId, username);
 
-            return ResponseEntity.ok(ApiResponse.success("图片删除成功", null));
+            return ResponseEntity.ok(ApiResponse.success("Image deleted successfully", null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.badRequest(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("删除失败: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.serverError("Delete failed: " + e.getMessage()));
         }
     }
 }

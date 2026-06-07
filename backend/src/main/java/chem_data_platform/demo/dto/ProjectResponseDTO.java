@@ -1,7 +1,7 @@
 package chem_data_platform.demo.dto;
 
 /**
- * 项目响应 DTO
+ * Project response DTO
  */
 public class ProjectResponseDTO {
 
@@ -11,7 +11,7 @@ public class ProjectResponseDTO {
     private String visibility;
     private String ownerUsername;
 
-    // 构造器
+    // Constructor
     public ProjectResponseDTO() {
     }
 

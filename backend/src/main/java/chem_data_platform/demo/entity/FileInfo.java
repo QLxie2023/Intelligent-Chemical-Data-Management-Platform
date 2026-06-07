@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 文件信息实体
+ * File information entity
  */
 @Entity
 @Table(name = "file_infos")
@@ -47,7 +47,7 @@ public class FileInfo {
     @Column(name = "deleted_at", nullable = true)
     private LocalDateTime deletedAt;
 
-    // 分析相关字段
+    // Analysis-related fields
     @Column(name = "analysis_status", nullable = true, length = 50)
     private String analysisStatus = "PENDING"; // PENDING, PROCESSING, COMPLETED, FAILED
 

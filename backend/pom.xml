@@ -9,7 +9,7 @@
     <artifactId>auth-system</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>auth-system</name>
-    <description>Week7 用户认证系统 - 国内终极保命版</description>
+    <description>Chemical data management backend service</description>
 
     <properties>
         <java.version>17</java.version>
@@ -24,7 +24,7 @@
         <relativePath/>
     </parent>
 
-    <!-- 添加多个备用Maven仓库 -->
+    <!-- Additional Maven repositories -->
     <repositories>
         <repository>
             <id>aliyun</id>
@@ -86,7 +86,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- 基本依赖 -->
+        <!-- Core dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -120,7 +120,7 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- 关键：jjwt 换成国内随便下都有的最稳定版本 0.11.5 -->
+        <!-- Use a stable jjwt version available from common Maven mirrors -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -173,7 +173,7 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
         </dependency>
-        <!-- 显式声明缺失的传递性依赖 -->
+        <!-- Explicitly declare missing transitive dependencies -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml-lite</artifactId>

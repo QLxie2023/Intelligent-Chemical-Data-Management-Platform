@@ -516,16 +516,16 @@ const logout = () => {
   router.push("/login");
 };
 
-// 检查用户是否有权限删除项目
+// Check whether the user has permission to delete the project
 const canDeleteProject = (project) => {
-  // 获取当前用户信息
+  // Get current user information
   const userStr = localStorage.getItem('user');
   if (!userStr) return false;
   
   const user = JSON.parse(userStr);
   const currentUsername = user.username;
   
-  // 检查是否是项目所有者
+  // Check whether the user is the project owner
   if (project.ownerUsername === currentUsername) {
     return true;
   }
@@ -533,7 +533,7 @@ const canDeleteProject = (project) => {
   return false;
 };
 
-// 删除项目
+// Delete project
 const openDeleteConfirm = (project) => {
   pendingDeleteProject.value = project;
   showDeleteConfirm.value = true;

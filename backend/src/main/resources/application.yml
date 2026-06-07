@@ -4,7 +4,7 @@ server:
   servlet:
     context-path: /
 
-# 应用程序配置
+# Application configuration
 app:
   server-url: http://127.0.0.1:8080
 
@@ -31,9 +31,9 @@ spring:
 
 jwt:
   secret: week7-2025-super-secret-key-ma-ruixin-lv-shu-yan
-  expiration: 86400000   # 24小时
+  expiration: 86400000   # 24 hours
 
-# 文件上传配置
+# File upload configuration
 upload:
   base-path: C:/uploads/chem_data_platform
   max-file-size: 10485760

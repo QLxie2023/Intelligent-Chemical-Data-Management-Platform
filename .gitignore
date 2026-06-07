@@ -1,0 +1,23 @@
+# Generated build output
+backend/target/
+frontend/dist/
+
+# Local dependencies
+frontend/node_modules/
+
+# Runtime uploads and exports
+backend/uploads/
+uploads/
+
+# IDE and OS metadata
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs and local environment files
+*.log
+*.local
+.env
+.env.*

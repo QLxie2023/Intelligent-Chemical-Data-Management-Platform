@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-// 新增用于调试的导入
+// Import added for debugging
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
@@ -34,20 +34,20 @@ public class UserService implements UserDetailsService {
     private InvitationCodeRepository invitationCodeRepository;
 
     @Autowired
-    private DataSource dataSource; // 注入 DataSource，便于打印连接信息
+    private DataSource dataSource; // Inject DataSource to print connection information
 
     @Autowired
     @Lazy
     private PasswordEncoder passwordEncoder;
 
     /**
-     * 用邀请码注册用户
+     * Register user with an invitation code
      */
     public User register(User user, String invitationCode) {
-        // 规范化邀请码（去除前后空格，防止前端带空格导致查询失败）
+        // Normalize the invitation code by trimming spaces to avoid frontend whitespace causing query failures
         String code = invitationCode == null ? null : invitationCode.trim();
 
-        // 调试日志：打印输入和数据源信息，帮助定位问题
+        // Debug log: print input and data source information to help locate issues
         logger.info("[INVITE-DEBUG] incoming invitationCode='{}' trimmed='{}' for username='{}'", invitationCode, code, user.getUsername());
         try {
             if (dataSource != null) {
@@ -65,11 +65,11 @@ public class UserService implements UserDetailsService {
             logger.warn("[INVITE-DEBUG] Unexpected error while logging DataSource info", ex);
         }
 
-        // 验证邀请码
+        // Validate invitation code
         Optional<InvitationCode> invCodeOpt = invitationCodeRepository.findByCode(code);
         
         if (!invCodeOpt.isPresent()) {
-            // 额外调试信息：列出表中前10条 code 帮助排查
+            // Extra debug information: list the first 10 codes in the table for troubleshooting
             try {
                 List<InvitationCode> all = invitationCodeRepository.findAll();
                 logger.info("[INVITE-DEBUG] invitation_codes count={}, sampleCodes={}", all.size(), all.stream().limit(10).map(InvitationCode::getCode).toList());
@@ -78,24 +78,24 @@ public class UserService implements UserDetailsService {
             }
 
             logger.error("[INVITE-DEBUG] Invitation code '{}' not found in DB (trimmed='{}'). Throwing IllegalArgumentException.", invitationCode, code);
-            throw new IllegalArgumentException("邀请码无效或已被使用，无法注册。");
+            throw new IllegalArgumentException("Invitation code is invalid or has already been used, so registration is not allowed.");
         }
         
         InvitationCode invCode = invCodeOpt.get();
         if (Boolean.TRUE.equals(invCode.getIsUsed())) {
             logger.error("[INVITE-DEBUG] Invitation code '{}' has already been used (usedBy={}, usedAt={})", code, invCode.getUsedById(), invCode.getUsedAt());
-            throw new IllegalArgumentException("邀请码无效或已被使用，无法注册。");
+            throw new IllegalArgumentException("Invitation code is invalid or has already been used, so registration is not allowed.");
         }
 
-        // 设置用户角色
+        // Set user role
         user.setRole(invCode.getRole());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        // displayName 默认与 username 相同
+        // displayName defaults to username
         user.setDisplayName(user.getUsername());
         
         User savedUser = userRepository.save(user);
         
-        // 标记邀请码为已使用
+        // Mark invitation code as used
         invCode.setIsUsed(true);
         invCode.setUsedById(savedUser.getId());
         invCode.setUsedAt(LocalDateTime.now());
@@ -104,17 +104,17 @@ public class UserService implements UserDetailsService {
         return savedUser;
     }
 
-    // 根据用户名查找用户
+    // Find user by username
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElse(null);
     }
 
-    // 实现 UserDetailsService 接口，用于 Spring Security 认证
+    // Implement UserDetailsService for Spring Security authentication
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("用户不存在: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User does not exist: " + username));
         
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
@@ -124,7 +124,7 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * 获取用户信息
+     * Get user information
      */
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
@@ -132,21 +132,21 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * 更新用户信息
+     * Update user information
      */
     public void updateUser(User user) {
         userRepository.save(user);
     }
 
     /**
-     * 验证密码
+     * Validate password
      */
     public boolean verifyPassword(User user, String rawPassword) {
         return passwordEncoder.matches(rawPassword, user.getPassword());
     }
 
     /**
-     * 更新密码
+     * Update password
      */
     public void updatePassword(User user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));

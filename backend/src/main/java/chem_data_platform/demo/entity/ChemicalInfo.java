@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 结构化化学信息
+ * Structured chemical information
  */
 @Entity
 @Table(name = "chemical_infos")

@@ -82,33 +82,33 @@ public class ProjectService {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     /**
-     * 初始化：验证和创建上传目录
+     * Initialize: validate and create upload directory
      */
     @PostConstruct
     public void init() {
         if (uploadBasePath == null || uploadBasePath.isEmpty()) {
             uploadBasePath = "C:/uploads/chem_data_platform";
-            System.out.println("⚠ uploadBasePath 为空，使用默认值: " + uploadBasePath);
+            System.out.println("⚠ uploadBasePath is empty; using default value: " + uploadBasePath);
         }
         
-        // 确保基础目录存在
+        // Ensure the base directory exists
         File baseDir = new File(uploadBasePath);
         if (!baseDir.exists()) {
             boolean created = baseDir.mkdirs();
             if (created) {
-                System.out.println("✓ 上传基础目录已创建: " + baseDir.getAbsolutePath());
+                System.out.println("✓ Upload base directory created: " + baseDir.getAbsolutePath());
             } else {
-                System.err.println("✗ 无法创建上传基础目录: " + baseDir.getAbsolutePath());
+                System.err.println("✗ Unable to create upload base directory: " + baseDir.getAbsolutePath());
             }
         } else {
-            System.out.println("✓ 上传基础目录已存在: " + baseDir.getAbsolutePath());
+            System.out.println("✓ Upload base directory already exists: " + baseDir.getAbsolutePath());
         }
     }
 
     public ProjectResponseDTO createProject(CreateProjectDTO dto, String username) {
-        // 获取用户
+        // Get user
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
 
         Project project = new Project();
         project.setName(dto.getName());
@@ -119,7 +119,7 @@ public class ProjectService {
         }
         project.setVisibility(vis);
         project.setOwnerId(user.getId());
-        project.setOwnerUsername(username);  // 设置 @Transient 字段用于返回
+        project.setOwnerUsername(username);  // Set @Transient field for response
         project.setCreatedAt(LocalDateTime.now());
         project.setUpdatedAt(LocalDateTime.now());
 
@@ -135,22 +135,22 @@ public class ProjectService {
     }
 
     /**
-     * 获取当前登录用户的项目列表
-     * 返回：
-     * 1. 用户所有者的项目（无论公开或私有）
-     * 2. 所有公开项目（由其他用户创建）
+     * Get the current logged-in user's project list
+     * Returns：
+     * 1. Projects owned by the user, whether public or private
+     * 2. All public projects created by other users
      */
     public List<ProjectResponseDTO> getUserProjects(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         
-        // 获取用户拥有的项目
+        // Get projects owned by the user
         List<Project> ownedProjects = projectRepository.findByOwnerId(user.getId());
         
-        // 获取所有公开项目
+        // Get all public projects
         List<Project> publicProjects = projectRepository.findByVisibility("PUBLIC");
         
-        // 合并并去重
+        // Merge and deduplicate
         java.util.Set<Long> projectIds = new java.util.HashSet<>();
         List<Project> mergedProjects = new java.util.ArrayList<>();
         
@@ -174,11 +174,11 @@ public class ProjectService {
     }
 
     /**
-     * 获取用户所有者的项目（仅私有项目）
+     * Get projects owned by the user, private projects only
      */
     public List<ProjectResponseDTO> getUserPrivateProjects(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         
         List<Project> projects = projectRepository.findByOwnerId(user.getId());
         return projects.stream()
@@ -188,7 +188,7 @@ public class ProjectService {
     }
 
     /**
-     * 获取所有公开项目
+     * Get all public projects
      */
     public List<ProjectResponseDTO> getPublicProjects() {
         List<Project> projects = projectRepository.findByVisibility("PUBLIC");
@@ -198,14 +198,14 @@ public class ProjectService {
     }
 
     /**
-     * 检查项目是否存在
+     * Check whether the project exists
      */
     public boolean projectExists(Long projectId) {
         return projectRepository.existsById(projectId);
     }
 
     /**
-     * 检查用户是否有权限上传到该项目
+     * Check whether the user has permission to upload to this project
      */
     public boolean hasProjectPermission(Long projectId, String username) {
         User user = userRepository.findByUsername(username)
@@ -221,11 +221,11 @@ public class ProjectService {
         return project.get().getOwnerId().equals(user.getId());
     }    
     /**
-     * 检查用户是否有权限访问项目媒体文件
-     * 权限规则：
-     * 1. 项目所有者可以访问
-     * 2. 公开项目的任何已认证用户可以访问
-     * 3. 私有项目只有所有者可以访问
+     * Check whether the user has permission to access project media files
+     * Permission rules：
+     * 1. Project owner can access
+     * 2. Any authenticated user can access public projects
+     * 3. Only the owner can access private projects
      */
     public boolean hasProjectAccessPermission(Long projectId, String username) {
         User user = userRepository.findByUsername(username)
@@ -241,55 +241,55 @@ public class ProjectService {
         
         Project p = project.get();
         
-        // 项目所有者总是有权限
+        // Project owner always has permission
         if (p.getOwnerId().equals(user.getId())) {
             return true;
         }
         
-        // 公开项目允许所有已认证用户访问
+        // Public projects allow all authenticated users to access
         if ("PUBLIC".equals(p.getVisibility())) {
             return true;
         }
         
-        // 私有项目只允许所有者访问
+        // Private projects only allow the owner to access
         return false;
     }    /**
-     * 上传文件
-     * 流程：1. 验证 → 2. 保存文件到磁盘 → 3. 保存文件信息到数据库 → 4. 更新分析状态为待处理
+     * Upload file
+     * Flow: 1. validate -> 2. save file to disk -> 3. save file metadata to database -> 4. set analysis status to pending
      */
     public FileUploadResponseDTO uploadFile(Long projectId, MultipartFile file, String username) throws IOException {
         if (!projectExists(projectId)) {
-            throw new IllegalArgumentException("项目不存在");
+            throw new IllegalArgumentException("Project does not exist");
         }
 
-        // 获取用户ID
+        // Get userID
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         Long userId = user.getId();
 
-        // 二次校验：大小与类型
+        // Secondary validation: size and type
         if (file.getSize() > maxFileSize) {
-            throw new IllegalArgumentException("文件大小超出限制");
+            throw new IllegalArgumentException("File size exceeds the limit");
         }
         java.util.Set<String> allowed = allowedFileTypes();
         if (!allowed.isEmpty() && (file.getContentType() == null || !allowed.contains(file.getContentType()))) {
-            throw new IllegalArgumentException("不支持的文件类型: " + file.getContentType());
+            throw new IllegalArgumentException("Unsupported file type: " + file.getContentType());
         }
 
-        // 1. 创建上传目录并保存文件到磁盘
+        // 1. Create upload directory and save file to disk
         File uploadDir = new File(uploadBasePath + "/projects/" + projectId + "/files/");
         if (!uploadDir.exists()) {
             boolean created = uploadDir.mkdirs();
             if (!created) {
-                throw new IOException("无法创建上传目录: " + uploadDir.getAbsolutePath());
+                throw new IOException("Unable to create upload directory: " + uploadDir.getAbsolutePath());
             }
-            System.out.println("✓ 上传目录已创建: " + uploadDir.getAbsolutePath());
+            System.out.println("✓ Upload directory created: " + uploadDir.getAbsolutePath());
         }        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
         File targetFile = new File(uploadDir, fileName);
         file.transferTo(targetFile);
-        System.out.println("✓ 文件已保存到磁盘: " + targetFile.getAbsolutePath());
+        System.out.println("✓ File saved to disk: " + targetFile.getAbsolutePath());
 
-        // 2. 先保存文件信息到数据库（原文件记录）
+        // 2. Save file metadata to the database first as the original file record
         FileInfo fileInfo = new FileInfo();
         fileInfo.setProjectId(projectId);
         fileInfo.setFileName(fileName);
@@ -300,12 +300,12 @@ public class ProjectService {
         fileInfo.setUploadTimestamp(LocalDateTime.now());
         fileInfo.setAccessUrl("/media/projects/" + projectId + "/files/" + fileName);
         fileInfo.setIsDeleted(false);
-        fileInfo.setAnalysisStatus("PENDING");  // 初始状态：待分析
+        fileInfo.setAnalysisStatus("PENDING");  // Initial status: pending analysis
 
         FileInfo savedFileInfo = fileInfoRepository.save(fileInfo);
-        System.out.println("✓ 文件已保存到数据库，fileId: " + savedFileInfo.getId() + "，fileName: " + fileName);
+        System.out.println("✓ File saved to database，fileId: " + savedFileInfo.getId() + "，fileName: " + fileName);
 
-        // 3. 构建响应 DTO
+        // 3. Build response DTO
         FileUploadResponseDTO dto = new FileUploadResponseDTO(
                 savedFileInfo.getId(),
                 savedFileInfo.getFileName(),
@@ -314,59 +314,59 @@ public class ProjectService {
                 savedFileInfo.getUploadTimestamp().format(FORMATTER)
         );
 
-        // 文件上传成功，分析将由前端发起请求 POST /api/v1/files/{fileId}/analysis 触发
-        System.out.println("✓ 文件上传完成，可通过 POST /api/v1/files/" + savedFileInfo.getId() + "/analysis 触发 Kimi 分析");
+        // File uploaded successfully. Analysis will be triggered by the frontend through POST /api/v1/files/{fileId}/analysis
+        System.out.println("✓ File upload completed. Analysis can be triggered through POST /api/v1/files/" + savedFileInfo.getId() + "/analysis");
 
         return dto;
     }
     /**
-     * 上传图片
-     * 流程：1. 验证 → 2. 保存图片到磁盘 → 3. 保存图片信息到数据库 → 4. 调用讯飞API进行分析 → 5. 保存分析结果
+     * Upload image
+     * Flow: 1. validate -> 2. save image to disk -> 3. save image metadata to database -> 4. call AI API for analysis -> 5. save analysis result
      */
     public ImageUploadResponseDTO uploadImage(Long projectId, MultipartFile image, String username) throws IOException {
-        System.out.println("=== 开始上传图片 ===");
+        System.out.println("=== Start uploading image ===");
         System.out.println("uploadBasePath: " + uploadBasePath);
         System.out.println("projectId: " + projectId);
         System.out.println("image.getOriginalFilename(): " + image.getOriginalFilename());
         System.out.println("image.getContentType(): " + image.getContentType());
         
         if (!projectExists(projectId)) {
-            throw new IllegalArgumentException("项目不存在");
+            throw new IllegalArgumentException("Project does not exist");
         }
 
-        // 获取用户ID
+        // Get userID
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         Long userId = user.getId();
 
-        // 二次校验：大小与图片类型
+        // Secondary validation: size and image type
         if (image.getSize() > maxFileSize) {
-            throw new IllegalArgumentException("图片大小超出限制");
+            throw new IllegalArgumentException("Image size exceeds the limit");
         }
         java.util.Set<String> allowedImg = allowedImageTypes();
         if (!allowedImg.isEmpty() && (image.getContentType() == null || !allowedImg.contains(image.getContentType()))) {
-            throw new IllegalArgumentException("不支持的图片类型: " + image.getContentType());
+            throw new IllegalArgumentException("Unsupported image type: " + image.getContentType());
         }
 
-        // 1. 创建上传目录并保存图片到磁盘
+        // 1. Create upload directory and save image to disk
         try {
             File uploadDir = new File(uploadBasePath + "/projects/" + projectId + "/images/");
-            System.out.println("uploadDir 路径: " + uploadDir.getAbsolutePath());
+            System.out.println("uploadDir path: " + uploadDir.getAbsolutePath());
             
             if (!uploadDir.exists()) {
                 boolean created = uploadDir.mkdirs();
                 if (!created) {
-                    throw new IOException("无法创建上传目录: " + uploadDir.getAbsolutePath());
+                    throw new IOException("Unable to create upload directory: " + uploadDir.getAbsolutePath());
                 }
-                System.out.println("✓ 上传目录已创建: " + uploadDir.getAbsolutePath());
+                System.out.println("✓ Upload directory created: " + uploadDir.getAbsolutePath());
             } else {
-                System.out.println("✓ 上传目录已存在: " + uploadDir.getAbsolutePath());
+                System.out.println("✓ Upload directory already exists: " + uploadDir.getAbsolutePath());
             }            String imageName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
             File targetFile = new File(uploadDir, imageName);
-            image.transferTo(targetFile);            System.out.println("✓ 图片已保存到磁盘: " + targetFile.getAbsolutePath());
+            image.transferTo(targetFile);            System.out.println("✓ Image saved to disk: " + targetFile.getAbsolutePath());
 
-            // 构建图片URL（使用相对路径，便于前端代理转发）
-            String imageUrl = "/media/projects/" + projectId + "/images/" + imageName;// 2. 先保存图片信息到数据库（原图片记录）
+            // Build image URL using a relative path for frontend proxy forwarding
+            String imageUrl = "/media/projects/" + projectId + "/images/" + imageName;// 2. Save image metadata to the database first as the original image record
             ImageInfo imageInfo = new ImageInfo();
             imageInfo.setProjectId(projectId);
             imageInfo.setImageName(imageName);
@@ -375,7 +375,7 @@ public class ProjectService {
             imageInfo.setUploaderId(userId);
 
             ImageInfo savedImageInfo = imageInfoRepository.save(imageInfo);
-            System.out.println("✓ 图片已保存到数据库，imageId: " + savedImageInfo.getImageId() + "，imageName: " + imageName);            // 3. 构建响应 DTO
+            System.out.println("✓ Image saved to database，imageId: " + savedImageInfo.getImageId() + "，imageName: " + imageName);            // 3. Build response DTO
             ImageUploadResponseDTO dto = new ImageUploadResponseDTO(
                     savedImageInfo.getImageId(),
                     savedImageInfo.getImageName(),
@@ -383,21 +383,21 @@ public class ProjectService {
                     savedImageInfo.getUploadTimestamp().format(FORMATTER)
             );
 
-            System.out.println("✓ 图片上传完成，准备触发分析");
+            System.out.println("✓ Image upload completed, ready to trigger analysis");
 
             return dto;
         } catch (IOException e) {
-            System.err.println("✗ 图片上传失败（IO异常）: " + e.getMessage());
+            System.err.println("✗ Image upload failed (I/O exception): " + e.getMessage());
             e.printStackTrace();
             throw e;
         } catch (Exception e) {
-            System.err.println("✗ 图片上传失败（其他异常）: " + e.getMessage());
+            System.err.println("✗ Image upload failed (other exception): " + e.getMessage());
             e.printStackTrace();
-            throw new IOException("图片上传失败: " + e.getMessage(), e);
+            throw new IOException("Image upload failed: " + e.getMessage(), e);
         }
     }    
     /**
-     * 将 Project 实体转换为 DTO，包括获取 ownerUsername
+     * Convert Project entity to DTO, including ownerUsername
      */
     private ProjectResponseDTO convertToDTO(Project project) {
         String ownerUsername = null;
@@ -416,25 +416,25 @@ public class ProjectService {
     }
 
     /**
-     * 获取项目详情
+     * Get project details
      */
     public ProjectDetailDTO getProjectDetail(Long projectId, String username) {
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         if (projectOpt.isEmpty()) {
-            throw new IllegalArgumentException("项目不存在");
+            throw new IllegalArgumentException("Project does not exist");
         }
 
         Project project = projectOpt.get();
         
-        // 权限检查：项目所有者或公开项目
+        // Permission check: project owner or public project
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         
         boolean isOwner = project.getOwnerId().equals(user.getId());
         boolean isPublic = "PUBLIC".equals(project.getVisibility());
         
         if (!isOwner && !isPublic) {
-            throw new IllegalArgumentException("无权限访问此项目");
+            throw new IllegalArgumentException("No permission to access this project");
         }
 
         User owner = userRepository.findById(project.getOwnerId()).orElse(null);
@@ -453,25 +453,25 @@ public class ProjectService {
     }
 
     /**
-     * 获取项目的文件列表
+     * Get project file list
      */
     public List<FileInfoDTO> getProjectFiles(Long projectId, String username) {
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         if (projectOpt.isEmpty()) {
-            throw new IllegalArgumentException("项目不存在");
+            throw new IllegalArgumentException("Project does not exist");
         }
 
         Project project = projectOpt.get();
         
-        // 权限检查
+        // Permission check
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         
         boolean isOwner = project.getOwnerId().equals(user.getId());
         boolean isPublic = "PUBLIC".equals(project.getVisibility());
         
         if (!isOwner && !isPublic) {
-            throw new IllegalArgumentException("无权限访问此项目");
+            throw new IllegalArgumentException("No permission to access this project");
         }        List<FileInfo> files = fileInfoRepository.findAll().stream()
                 .filter(f -> f.getProjectId().equals(projectId))
                 .collect(Collectors.toList());        return files.stream()
@@ -496,25 +496,25 @@ public class ProjectService {
     }
 
     /**
-     * 获取项目的图片列表
+     * Get project image list
      */
     public List<ImageInfoDTO> getProjectImages(Long projectId, String username) {
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         if (projectOpt.isEmpty()) {
-            throw new IllegalArgumentException("项目不存在");
+            throw new IllegalArgumentException("Project does not exist");
         }
 
         Project project = projectOpt.get();
         
-        // 权限检查
+        // Permission check
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         
         boolean isOwner = project.getOwnerId().equals(user.getId());
         boolean isPublic = "PUBLIC".equals(project.getVisibility());
         
         if (!isOwner && !isPublic) {
-            throw new IllegalArgumentException("无权限访问此项目");
+            throw new IllegalArgumentException("No permission to access this project");
         }
 
         List<ImageInfo> images = imageInfoRepository.findAll().stream()
@@ -541,8 +541,8 @@ public class ProjectService {
     }
 
     /**
-     * 根据 MIME 类型推断文件类型
-     * 返回值: DOCUMENT/IMAGE/AUDIO/VIDEO/ARCHIVE/OTHER
+     * Infer file type from MIME type
+     * Return value: DOCUMENT/IMAGE/AUDIO/VIDEO/ARCHIVE/OTHER
      */
     private String inferFileType(String mimeType) {
         if (mimeType == null) {
@@ -565,8 +565,8 @@ public class ProjectService {
             return "ARCHIVE";        }
         return "OTHER";
     }    /**
-     * 获取文件分析状态
-     * 返回 Map 包含: status, summary, tableData, errorReason, startTime
+     * Get file analysis status
+     * Return Map includes: status, summary, tableData, errorReason, startTime
      */
     public Map<String, Object> getFileAnalysisStatus(Long fileId) {
         Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
@@ -615,7 +615,7 @@ public class ProjectService {
     }
 
     /**
-     * 更新文件分析状态
+     * Update file analysis status
      */
     public void updateFileAnalysisStatus(Long fileId, String status) {
         Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
@@ -628,7 +628,7 @@ public class ProjectService {
             fileInfoRepository.save(file);
         }
     }    /**
-     * 保存文件分析结果
+     * Save file analysis result
      */
     @Transactional
     public void saveFileAnalysisResult(Long fileId, String analysisData) {
@@ -639,9 +639,9 @@ public class ProjectService {
             file.setAnalysisData(analysisData);
             file.setAnalysisEndTime(LocalDateTime.now());
             fileInfoRepository.save(file);
-            System.out.println("✅ [DB] 已保存分析结果: fileId=" + fileId + ", 数据长度=" + analysisData.length());
+            System.out.println("✅ [DB] Analysis result saved: fileId=" + fileId + ", data length=" + analysisData.length());
         } else {
-            System.err.println("❌ [DB] 文件不存在: fileId=" + fileId);
+            System.err.println("❌ [DB] File does not exist: fileId=" + fileId);
         }
     }
 
@@ -685,7 +685,7 @@ public class ProjectService {
     }
 
     /**
-     * 保存文件分析错误
+     * Save file analysis error
      */
     @Transactional
     public void saveFileAnalysisError(Long fileId, String errorReason) {
@@ -696,9 +696,9 @@ public class ProjectService {
             file.setAnalysisErrorReason(errorReason);
             file.setAnalysisEndTime(LocalDateTime.now());
             fileInfoRepository.save(file);
-            System.out.println("✅ [DB] 已保存错误信息: fileId=" + fileId + ", 错误=" + errorReason);
+            System.out.println("✅ [DB] Error information saved: fileId=" + fileId + ", error=" + errorReason);
         } else {
-            System.err.println("❌ [DB] 文件不存在: fileId=" + fileId);
+            System.err.println("❌ [DB] File does not exist: fileId=" + fileId);
         }
     }
 
@@ -709,9 +709,9 @@ public class ProjectService {
             FileInfo file = fileOpt.get();
             file.setConfirmedData(confirmedData);
             fileInfoRepository.save(file);
-            System.out.println("✅ [DB] 已保存确认数据: fileId=" + fileId);
+            System.out.println("✅ [DB] Confirmed data saved: fileId=" + fileId);
         } else {
-            throw new IllegalArgumentException("文件不存在: fileId=" + fileId);
+            throw new IllegalArgumentException("File does not exist: fileId=" + fileId);
         }
     }
 
@@ -722,9 +722,9 @@ public class ProjectService {
             ImageInfo image = imgOpt.get();
             image.setConfirmedData(confirmedData);
             imageInfoRepository.save(image);
-            System.out.println("✅ [DB] 已保存图片确认数据: imageId=" + imageId);
+            System.out.println("✅ [DB] Image confirmed data saved: imageId=" + imageId);
         } else {
-            throw new IllegalArgumentException("图片不存在: imageId=" + imageId);
+            throw new IllegalArgumentException("Image does not exist: imageId=" + imageId);
         }
     }
 
@@ -795,9 +795,9 @@ public class ProjectService {
             image.setAnalysisData(analysisData);
             image.setAnalysisEndTime(LocalDateTime.now());
             imageInfoRepository.save(image);
-            System.out.println("✅ [DB] 已保存图片分析结果: imageId=" + imageId + ", 数据长度=" + analysisData.length());
+            System.out.println("✅ [DB] Image analysis result saved: imageId=" + imageId + ", data length=" + analysisData.length());
         } else {
-            System.err.println("❌ [DB] 图片不存在: imageId=" + imageId);
+            System.err.println("❌ [DB] Image does not exist: imageId=" + imageId);
         }
     }
 
@@ -810,9 +810,9 @@ public class ProjectService {
             image.setAnalysisErrorReason(errorReason);
             image.setAnalysisEndTime(LocalDateTime.now());
             imageInfoRepository.save(image);
-            System.out.println("✅ [DB] 已保存图片错误信息: imageId=" + imageId + ", 错误=" + errorReason);
+            System.out.println("✅ [DB] Image error information saved: imageId=" + imageId + ", error=" + errorReason);
         } else {
-            System.err.println("❌ [DB] 图片不存在: imageId=" + imageId);
+            System.err.println("❌ [DB] Image does not exist: imageId=" + imageId);
         }
     }
 
@@ -921,26 +921,26 @@ public class ProjectService {
     }
 
     /**
-     * 删除文件
-     * 权限检查：只有文件上传者或项目所有者可以删除
+     * Delete file
+     * Permission check: only the file uploader or project owner can delete
      */
     @Transactional
     public void deleteFile(Long fileId, String username) {
-        // 获取用户信息
+        // Get user information
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         Long userId = user.getId();
 
-        // 查找文件信息
+        // Find file information
         Optional<FileInfo> fileOpt = fileInfoRepository.findById(fileId);
         if (fileOpt.isEmpty()) {
-            throw new IllegalArgumentException("文件不存在");
+            throw new IllegalArgumentException("File does not exist");
         }
 
         FileInfo fileInfo = fileOpt.get();
         Long projectId = fileInfo.getProjectId();
 
-        // 权限检查：文件上传者或项目所有者
+        // Permission check: file uploader or project owner
         boolean isUploader = fileInfo.getUploaderId().equals(userId);
         boolean isProjectOwner = false;
         
@@ -950,49 +950,49 @@ public class ProjectService {
         }
 
         if (!isUploader && !isProjectOwner) {
-            throw new IllegalArgumentException("无权限删除此文件");
+            throw new IllegalArgumentException("No permission to delete this file");
         }
 
-        // 删除物理文件
+        // Delete physical file
         String filePath = fileInfo.getFilePath();
         if (filePath != null) {
             File file = new File(filePath);
             if (file.exists()) {
                 boolean deleted = file.delete();
                 if (deleted) {
-                    System.out.println("✓ 物理文件已删除: " + filePath);
+                    System.out.println("✓ Physical file deleted: " + filePath);
                 } else {
-                    System.err.println("✗ 无法删除物理文件: " + filePath);
+                    System.err.println("✗ Unable to delete physical file: " + filePath);
                 }
             }
         }
 
-        // 删除数据库记录
+        // Delete database record
         fileInfoRepository.delete(fileInfo);
-        System.out.println("✓ 数据库文件记录已删除，fileId: " + fileId);
+        System.out.println("✓ Database file record deleted，fileId: " + fileId);
     }
 
     /**
-     * 删除图片
-     * 权限检查：只有图片上传者或项目所有者可以删除
+     * Delete image
+     * Permission check: only the image uploader or project owner can delete
      */
     @Transactional
     public void deleteImage(Long imageId, String username) {
-        // 获取用户信息
+        // Get user information
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         Long userId = user.getId();
 
-        // 查找图片信息
+        // Find image information
         Optional<ImageInfo> imageOpt = imageInfoRepository.findById(imageId);
         if (imageOpt.isEmpty()) {
-            throw new IllegalArgumentException("图片不存在");
+            throw new IllegalArgumentException("Image does not exist");
         }
 
         ImageInfo imageInfo = imageOpt.get();
         Long projectId = imageInfo.getProjectId();
 
-        // 权限检查：图片上传者或项目所有者
+        // Permission check: image uploader or project owner
         boolean isUploader = imageInfo.getUploaderId().equals(userId);
         boolean isProjectOwner = false;
         
@@ -1002,107 +1002,107 @@ public class ProjectService {
         }
 
         if (!isUploader && !isProjectOwner) {
-            throw new IllegalArgumentException("无权限删除此图片");
+            throw new IllegalArgumentException("No permission to delete this image");
         }
 
-        // 删除物理文件
+        // Delete physical file
         String imagePath = uploadBasePath + "/projects/" + projectId + "/images/" + imageInfo.getImageName();
         File file = new File(imagePath);
         if (file.exists()) {
             boolean deleted = file.delete();
             if (deleted) {
-                System.out.println("✓ 物理图片已删除: " + imagePath);
+                System.out.println("✓ Physical image deleted: " + imagePath);
             } else {
-                System.err.println("✗ 无法删除物理图片: " + imagePath);
+                System.err.println("✗ Unable to delete physical image: " + imagePath);
             }
         }
 
-        // 删除数据库记录
+        // Delete database record
         imageInfoRepository.delete(imageInfo);
-        System.out.println("✓ 数据库图片记录已删除，imageId: " + imageId);
+        System.out.println("✓ Database image record deleted，imageId: " + imageId);
     }
 
     /**
-     * 删除项目
-     * 权限检查：只有项目所有者可以删除
+     * Delete project
+     * Permission check: only the project owner can delete
      */
     @Transactional
     public void deleteProject(Long projectId, String username) {
-        // 获取用户信息
+        // Get user information
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
         Long userId = user.getId();
 
-        // 查找项目信息
+        // Find project information
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         if (projectOpt.isEmpty()) {
-            throw new IllegalArgumentException("项目不存在");
+            throw new IllegalArgumentException("Project does not exist");
         }
 
         Project project = projectOpt.get();
 
-        // 权限检查：只有项目所有者可以删除
+        // Permission check: only the project owner can delete
         if (!project.getOwnerId().equals(userId)) {
-            throw new IllegalArgumentException("无权限删除此项目");
+            throw new IllegalArgumentException("No permission to delete this project");
         }
 
-        // 删除项目相关的所有文件
+        // Delete all files related to the project
         List<FileInfo> files = fileInfoRepository.findAll().stream()
                 .filter(f -> f.getProjectId().equals(projectId))
                 .collect(Collectors.toList());
 
         for (FileInfo file : files) {
-            // 删除物理文件
+            // Delete physical file
             String filePath = file.getFilePath();
             if (filePath != null) {
                 File physicalFile = new File(filePath);
                 if (physicalFile.exists()) {
                     boolean deleted = physicalFile.delete();
                     if (deleted) {
-                        System.out.println("✓ 物理文件已删除: " + filePath);
+                        System.out.println("✓ Physical file deleted: " + filePath);
                     } else {
-                        System.err.println("✗ 无法删除物理文件: " + filePath);
+                        System.err.println("✗ Unable to delete physical file: " + filePath);
                     }
                 }
             }
-            // 删除数据库记录
+            // Delete database record
             fileInfoRepository.delete(file);
         }
 
-        // 删除项目相关的所有图片
+        // Delete all images related to the project
         List<ImageInfo> images = imageInfoRepository.findAll().stream()
                 .filter(i -> i.getProjectId().equals(projectId))
                 .collect(Collectors.toList());
 
         for (ImageInfo image : images) {
-            // 删除物理文件
+            // Delete physical file
             String imagePath = uploadBasePath + "/projects/" + projectId + "/images/" + image.getImageName();
             File physicalFile = new File(imagePath);
             if (physicalFile.exists()) {
                 boolean deleted = physicalFile.delete();
                 if (deleted) {
-                    System.out.println("✓ 物理图片已删除: " + imagePath);
+                    System.out.println("✓ Physical image deleted: " + imagePath);
                 } else {
-                    System.err.println("✗ 无法删除物理图片: " + imagePath);
+                    System.err.println("✗ Unable to delete physical image: " + imagePath);
                 }
             }
-            // 删除数据库记录
+            // Delete database record
             imageInfoRepository.delete(image);
         }
 
-        // 删除项目目录
+        // Delete project directory
         File projectDir = new File(uploadBasePath + "/projects/" + projectId);
         if (projectDir.exists()) {
             deleteDirectory(projectDir);
         }
 
-        // 删除数据库中的项目记录
+        // Delete project record from database
         projectRepository.delete(project);
-        System.out.println("✓ 项目已删除，projectId: " + projectId);
+        System.out.println("✓ Project deleted，projectId: " + projectId);
     }
 
     /**
-     * 递归删除目录
+     * Recursively delete directory
      */
     private void deleteDirectory(File directory) {
         File[] files = directory.listFiles();

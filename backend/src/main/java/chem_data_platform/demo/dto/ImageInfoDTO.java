@@ -3,7 +3,7 @@ package chem_data_platform.demo.dto;
 import java.time.LocalDateTime;
 
 /**
- * 图片信息 DTO
+ * Image information DTO
  */
 public class ImageInfoDTO {
     private Long imageId;

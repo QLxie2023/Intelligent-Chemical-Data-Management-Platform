@@ -1,17 +1,17 @@
 package chem_data_platform.demo.dto;
 
 /**
- * 登录响应 DTO
+ * Login response DTO
  */
 public class LoginResponseDTO {
     private String token;
     private UserInfoDTO user;
 
-    // 无参构造器
+    // No-argument constructor
     public LoginResponseDTO() {
     }
 
-    // 全参构造器
+    // All-argument constructor
     public LoginResponseDTO(String token, UserInfoDTO user) {
         this.token = token;
         this.user = user;

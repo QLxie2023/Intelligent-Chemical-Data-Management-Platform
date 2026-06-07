@@ -26,12 +26,12 @@ public class User {
     private String email;
 
     @Column(nullable = false, length = 50)
-    private String displayName; // 显示昵称，默认与username相同
+    private String displayName; // Display nickname, defaults to username
 
     @Column(nullable = false, length = 50)
-    private String role = "ROLE_RESEARCHER"; // 全局角色，默认为ROLE_RESEARCHER
+    private String role = "ROLE_RESEARCHER"; // Global role, defaults to ROLE_RESEARCHER
 
-    // ================== 下面是手动写的 getter/setter，彻底干掉 Lombok 红叉 ==================
+    // ================== Manual getters and setters to avoid Lombok IDE errors ==================
     public Long getId() {
         return id;
     }
