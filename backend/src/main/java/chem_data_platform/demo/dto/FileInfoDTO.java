@@ -3,7 +3,7 @@ package chem_data_platform.demo.dto;
 import java.time.LocalDateTime;
 
 /**
- * 文件信息 DTO
+ * File information DTO
  */
 public class FileInfoDTO {
     private Long fileId;

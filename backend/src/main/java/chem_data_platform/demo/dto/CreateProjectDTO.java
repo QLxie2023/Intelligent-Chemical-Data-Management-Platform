@@ -5,23 +5,23 @@ import jakarta.validation.constraints.Pattern;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * 创建项目请求 DTO
- * 支持公开（PUBLIC）和私有（PRIVATE）项目
+ * Create project request DTO
+ * Supports public (PUBLIC) and private (PRIVATE) projects
  */
 public class CreateProjectDTO {
 
-    @NotBlank(message = "项目名称不能为空")
+    @NotBlank(message = "Project name cannot be empty")
     @JsonProperty("name")
     private String name;
 
-    @NotBlank(message = "项目描述不能为空")
+    @NotBlank(message = "Project description cannot be empty")
     @JsonProperty("description")
     private String description;
 
-    @NotBlank(message = "可见性不能为空")
-    @Pattern(regexp = "^(PUBLIC|PRIVATE)$", message = "可见性只能是 PUBLIC 或 PRIVATE")
+    @NotBlank(message = "Visibility cannot be empty")
+    @Pattern(regexp = "^(PUBLIC|PRIVATE)$", message = "Visibility must be PUBLIC or PRIVATE")
     @JsonProperty("visibility")
-    private String visibility; // PUBLIC（公开）或 PRIVATE（私有）
+    private String visibility; // PUBLIC or PRIVATE
 
     // Getters and Setters
     public String getName() {

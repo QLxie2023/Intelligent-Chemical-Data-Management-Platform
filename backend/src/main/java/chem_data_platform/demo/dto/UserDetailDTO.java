@@ -1,7 +1,7 @@
 package chem_data_platform.demo.dto;
 
 /**
- * 用户详情DTO，包含统计信息
+ * User details DTO with statistics
  */
 public class UserDetailDTO {
     private Integer id;

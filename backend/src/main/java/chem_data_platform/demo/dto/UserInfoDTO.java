@@ -1,7 +1,7 @@
 package chem_data_platform.demo.dto;
 
 /**
- * 用户信息响应 DTO
+ * User information response DTO
  */
 public class UserInfoDTO {
     private Integer userId;
@@ -10,11 +10,11 @@ public class UserInfoDTO {
     private String displayName;
     private String role;
 
-    // 无参构造器
+    // No-argument constructor
     public UserInfoDTO() {
     }
 
-    // 全参构造器
+    // All-argument constructor
     public UserInfoDTO(Integer userId, String username, String email, String displayName, String role) {
         this.userId = userId;
         this.username = username;

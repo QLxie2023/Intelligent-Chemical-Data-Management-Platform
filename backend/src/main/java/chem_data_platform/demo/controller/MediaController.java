@@ -15,9 +15,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 /**
- * 媒体文件服务控制器
- * 提供项目文件和图片的访问服务
- * 仅允许项目成员或项目所有者访问
+ * Media file service controller
+ * Provides access services for project files and images
+ * Only project members or project owners are allowed to access
  */
 @RestController
 @RequestMapping("/api/v1/media")
@@ -31,25 +31,25 @@ public class MediaController {
 
     @Autowired
     private JwtUtil jwtUtil;    /**
-     * 获取项目图片
+     * Get project image
      * GET /media/projects/{projectId}/images/{fileName}
-     * 需要 JWT token 且必须是项目成员或公开项目
+     * Requires a JWT token and project membership or a public project
      */    @GetMapping("/projects/{projectId}/images/{fileName:.+}")
     public ResponseEntity<?> getImage(
             @PathVariable Long projectId,
             @PathVariable String fileName,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // TODO: 权限检查 - 仅允许项目成员或项目所有者访问
+            // TODO: Permission check - Only project members or project owners are allowed to access
             // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            //             .body("未提供有效的认证令牌");
+            //             .body("Missing a valid authentication token");
             // }
             // 
             // String token = authHeader.substring(7);
             // if (!jwtUtil.isTokenValid(token)) {
             //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            //             .body("无效的认证令牌");
+            //             .body("Invalid authentication token");
             // }
             // 
             // String username = jwtUtil.getUsernameFromToken(token);
@@ -57,31 +57,31 @@ public class MediaController {
             // boolean hasAccess = projectService.hasProjectAccessPermission(projectId, username);
             // if (!hasAccess) {
             //     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            //             .body("无权限访问该项目的媒体文件");
+            //             .body("No permission to access media files in this project");
             // }
             
-            // 构建完整文件路径
+            // Build the full file path
             String filePath = uploadBasePath + File.separator + "projects" + File.separator + 
                             projectId + File.separator + "images" + File.separator + fileName;
             
             File file = new File(filePath);
             
-            // 验证文件存在
+            // Verify that the file exists
             if (!file.exists() || !file.isFile()) {
                 return ResponseEntity.notFound().build();
             }
             
-            // 验证路径安全性（防止目录遍历攻击）
+            // Validate path safety to prevent directory traversal attacks
             String canonicalPath = file.getCanonicalPath();
             String basePath = new File(uploadBasePath).getCanonicalPath();
             if (!canonicalPath.startsWith(basePath)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
-            // 读取文件内容
+            // Read file content
             byte[] fileContent = Files.readAllBytes(file.toPath());
             
-            // 确定媒体类型
+            // Determine media type
             MediaType mediaType = getMediaType(fileName);
             
             return ResponseEntity.ok()
@@ -93,25 +93,25 @@ public class MediaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }    /**
-     * 获取项目文件
+     * Get project file
      * GET /media/projects/{projectId}/files/{fileName}
-     * 需要 JWT token 且必须是项目成员或公开项目
+     * Requires a JWT token and project membership or a public project
      */    @GetMapping("/projects/{projectId}/files/{fileName:.+}")
     public ResponseEntity<?> getFile(
             @PathVariable Long projectId,
             @PathVariable String fileName,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // TODO: 权限检查 - 仅允许项目成员或项目所有者访问
+            // TODO: Permission check - Only project members or project owners are allowed to access
             // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            //             .body("未提供有效的认证令牌");
+            //             .body("Missing a valid authentication token");
             // }
             // 
             // String token = authHeader.substring(7);
             // if (!jwtUtil.isTokenValid(token)) {
             //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            //             .body("无效的认证令牌");
+            //             .body("Invalid authentication token");
             // }
             // 
             // String username = jwtUtil.getUsernameFromToken(token);
@@ -119,31 +119,31 @@ public class MediaController {
             // boolean hasAccess = projectService.hasProjectAccessPermission(projectId, username);
             // if (!hasAccess) {
             //     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            //             .body("无权限访问该项目的媒体文件");
+            //             .body("No permission to access media files in this project");
             // }
             
-            // 构建完整文件路径
+            // Build the full file path
             String filePath = uploadBasePath + File.separator + "projects" + File.separator + 
                             projectId + File.separator + "files" + File.separator + fileName;
             
             File file = new File(filePath);
             
-            // 验证文件存在
+            // Verify that the file exists
             if (!file.exists() || !file.isFile()) {
                 return ResponseEntity.notFound().build();
             }
             
-            // 验证路径安全性（防止目录遍历攻击）
+            // Validate path safety to prevent directory traversal attacks
             String canonicalPath = file.getCanonicalPath();
             String basePath = new File(uploadBasePath).getCanonicalPath();
             if (!canonicalPath.startsWith(basePath)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
-            // 读取文件内容
+            // Read file content
             byte[] fileContent = Files.readAllBytes(file.toPath());
             
-            // 确定媒体类型
+            // Determine media type
             MediaType mediaType = getMediaType(fileName);
             
             return ResponseEntity.ok()
@@ -157,7 +157,7 @@ public class MediaController {
     }
 
     /**
-     * 根据文件扩展名推断媒体类型
+     * Infer media type from the file extension
      */
     private MediaType getMediaType(String fileName) {
         String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();

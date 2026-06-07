@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AnalysisResultRepository extends JpaRepository<AnalysisResult, Long> {
-    // 额外查询方法可按需添加
+    // Additional query methods can be added as needed
 }

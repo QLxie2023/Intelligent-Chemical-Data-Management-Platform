@@ -19,11 +19,11 @@ const routes = [
   { path: "/user", component: User, meta: { requiresAuth: true } },
   { path:"/normal_user", component: N_User, meta: { requiresAuth: true } },
   {
-    path: '/projects/:id', // 动态匹配 /projects/1, /projects/2 等
+    path: '/projects/:id', // Dynamically matches /projects/1, /projects/2, and similar paths
     name: 'ProjectDetail',
     component: ProjectDetail,
     meta: { requiresAuth: true }
-    // props: true // 允许将路由参数作为 props 传递给组件 (可选)
+    // props: true // Allow route params to be passed as props to the component (optional)
   }
 ];
 
@@ -32,7 +32,7 @@ const router = createRouter({
   routes
 });
 
-// 全局路由守卫
+// Global route guard
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token");
 

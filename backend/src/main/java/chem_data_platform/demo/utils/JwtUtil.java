@@ -22,18 +22,18 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // 生成 token（适配 0.12.6 最新写法）
+    // Generate token, compatible with the latest 0.12.6 style
     public String generateToken(String username) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .claim("sub", username)                    // subject
                 .claim("iat", new Date(now))               // issued at
                 .claim("exp", new Date(now + expiration)) // expiration
-                .signWith(getSigningKey())                 // 签名
+                .signWith(getSigningKey())                 // Signature
                 .compact();
     }
 
-    // 从 token 取用户名
+    // Get username from token
     public String getUsernameFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -41,7 +41,7 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .get("sub", String.class);
-    }    // 验证 token 是否有效
+    }    // Validate whether the token is valid
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -54,7 +54,7 @@ public class JwtUtil {
         }
     }
 
-    // isTokenValid 是 validateToken 的别名
+    // isTokenValid is an alias for validateToken
     public boolean isTokenValid(String token) {
         return validateToken(token);
     }

@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             
-            // 验证 Token 是否有效
+            // Validate whether the token is valid
             if (jwtUtil.isTokenValid(token)) {
                 String username = jwtUtil.getUsernameFromToken(token);
 

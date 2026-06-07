@@ -1,19 +1,18 @@
--- 【核心修复】强制编码为utf8mb4，解决Windows中文插入报错
+-- [Core fix]Force utf8mb4 encoding to avoid Windows insertion encoding errors
 SET NAMES utf8mb4;
 
--- 【新增】创建数据库（支持中文，字符集utf8mb4）
+-- [Added]Create database with utf8mb4 character set
 CREATE DATABASE IF NOT EXISTS datagov_db 
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
--- 选择数据库
+-- Select database
 USE datagov_db;
 
--- 1. 禁用外键检查
+-- 1. Disable foreign key checks
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 2. 删除所有表
-DROP TABLE IF EXISTS graph_visualizations;
+-- 2. Drop all tables
 DROP TABLE IF EXISTS analysis_results;
 DROP TABLE IF EXISTS analysis_records;
 DROP TABLE IF EXISTS image_infos;
@@ -23,11 +22,11 @@ DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS invitation_codes;
 DROP TABLE IF EXISTS users;
 
--- 3. 重新启用外键检查
+-- 3. Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;
 
--- 4. 重新创建所有表
--- [1] 用户表
+-- 4. Recreate all tables
+-- [1] Users table
 CREATE TABLE users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -42,7 +41,7 @@ CREATE TABLE users (
     INDEX idx_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [2] 邀请码表
+-- [2] Invitation codes table
 CREATE TABLE invitation_codes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
@@ -56,7 +55,7 @@ CREATE TABLE invitation_codes (
     FOREIGN KEY (used_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [3] 项目表
+-- [3] Projects table
 CREATE TABLE projects (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -68,7 +67,7 @@ CREATE TABLE projects (
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [4] 项目成员表
+-- [4] Project members table
 CREATE TABLE project_members (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     project_id BIGINT NOT NULL,
@@ -80,7 +79,7 @@ CREATE TABLE project_members (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [5] 文件信息表
+-- [5] File information table
 CREATE TABLE file_infos (
     file_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     project_id BIGINT NOT NULL,
@@ -94,18 +93,18 @@ CREATE TABLE file_infos (
     access_url VARCHAR(500) NULL,
     is_deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP NULL,
-    analysis_status VARCHAR(50) DEFAULT NULL COMMENT '分析状态: PENDING/PROCESSING/COMPLETED/FAILED',
-    analysis_data LONGTEXT DEFAULT NULL COMMENT '分析结果数据（JSON格式）',
-    analysis_start_time DATETIME DEFAULT NULL COMMENT '分析开始时间',
-    analysis_end_time DATETIME DEFAULT NULL COMMENT '分析结束时间',
-    analysis_error_reason VARCHAR(500) DEFAULT NULL COMMENT '分析失败的错误原因',
+    analysis_status VARCHAR(50) DEFAULT NULL COMMENT 'Analysis status: PENDING/PROCESSING/COMPLETED/FAILED',
+    analysis_data LONGTEXT DEFAULT NULL COMMENT 'Analysis result data in JSON format',
+    analysis_start_time DATETIME DEFAULT NULL COMMENT 'Analysis start time',
+    analysis_end_time DATETIME DEFAULT NULL COMMENT 'Analysis end time',
+    analysis_error_reason VARCHAR(500) DEFAULT NULL COMMENT 'Reason for analysis failure',
     INDEX idx_project_id (project_id),
     INDEX idx_analysis_status (analysis_status),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (uploader_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [6] 图片信息表
+-- [6] Image information table
 CREATE TABLE image_infos (
     image_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     project_id BIGINT NOT NULL,
@@ -117,7 +116,7 @@ CREATE TABLE image_infos (
     FOREIGN KEY (uploader_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [7] 分析记录表
+-- [7] Analysis records table
 CREATE TABLE analysis_records (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     file_id BIGINT NOT NULL,
@@ -131,17 +130,17 @@ CREATE TABLE analysis_records (
     FOREIGN KEY (file_id) REFERENCES file_infos(file_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [8] 分析结果表
+-- [8] Analysis results table
 CREATE TABLE analysis_results (
     result_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    file_id BIGINT NULL COMMENT '关联的文件ID（如果分析的是文件）',
-    image_id BIGINT NULL COMMENT '关联的图片ID（如果分析的是图片）',
-    project_id BIGINT NULL COMMENT '关联的项目ID',
-    summary TEXT NULL COMMENT '分析摘要',
-    raw_response LONGTEXT NULL COMMENT '原始响应数据（JSON格式）',
-    status VARCHAR(20) NULL COMMENT '分析状态',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    file_id BIGINT NULL COMMENT 'Associated file ID if the analyzed item is a file',
+    image_id BIGINT NULL COMMENT 'Associated image ID if the analyzed item is an image',
+    project_id BIGINT NULL COMMENT 'Associated project ID',
+    summary TEXT NULL COMMENT 'Analysis summary',
+    raw_response LONGTEXT NULL COMMENT 'Raw response data in JSON format',
+    status VARCHAR(20) NULL COMMENT 'Analysis status',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update time',
     INDEX idx_file_id (file_id),
     INDEX idx_image_id (image_id),
     INDEX idx_project_id (project_id),
@@ -151,52 +150,30 @@ CREATE TABLE analysis_results (
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [9] 知识图谱可视化表
-CREATE TABLE graph_visualizations (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '可视化记录ID',
-    file_id BIGINT NOT NULL COMMENT '关联的文件ID',
-    project_id BIGINT NOT NULL COMMENT '关联的项目ID',
-    d3_graph_data LONGTEXT COMMENT 'D3.js 格式的图谱数据（JSON格式）',
-    echarts_graph_data LONGTEXT COMMENT 'ECharts 格式的图谱数据（JSON格式）',
-    cytoscape_graph_data LONGTEXT COMMENT 'Cytoscape.js 格式的图谱数据（JSON格式）',
-    svg_graph_image LONGTEXT COMMENT 'SVG 格式的图谱图像',
-    raw_graph_data LONGTEXT COMMENT '原始图谱数据（通用格式，JSON）',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    node_count INT COMMENT '图谱中的节点数量',
-    link_count INT COMMENT '图谱中的边/链接数量',
-    remarks TEXT COMMENT '备注信息',
-    INDEX idx_file_id (file_id),
-    INDEX idx_project_id (project_id),
-    INDEX idx_created_at (created_at),
-    FOREIGN KEY (file_id) REFERENCES file_infos(file_id) ON DELETE CASCADE,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识图谱可视化数据表';
-
--- 5. 【修复版】插入测试数据
--- 插入用户
+-- 5. [fixed version]Insert test data
+-- Insert users
 INSERT INTO users (username, email, password_hash, display_name, role) VALUES
-('admin', 'admin@datagov.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL1lh.S6', '系统管理员', 'ROLE_ADMIN'),
-('researcher1', 'researcher1@example.com', '$2a$10$rOzZJkI7C8e.YbWp9.AkOeY6W9kQ8q8q8q8q8q8q8q8q8q8q8q8q8q8', '马睿欣', 'ROLE_RESEARCHER');
+('admin', 'admin@datagov.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL1lh.S6', 'System Administrator', 'ROLE_ADMIN'),
+('researcher1', 'researcher1@example.com', '$2a$10$rOzZJkI7C8e.YbWp9.AkOeY6W9kQ8q8q8q8q8q8q8q8q8q8q8q8q8q8', 'Researcher One', 'ROLE_RESEARCHER');
 
--- 插入项目
+-- Insert project
 INSERT INTO projects (name, description, visibility, owner_id) VALUES
-('热喷涂涂层优化研究', '基于APS工艺的Al2O3-TiO2涂层性能分析。', 'PRIVATE', 2);
+('Thermal Spray Coating Optimization Study', 'Performance analysis of Al2O3-TiO2 coatings based on the APS process.', 'PRIVATE', 2);
 
--- 插入项目成员
+-- Insert project members
 INSERT INTO project_members (project_id, user_id, role) VALUES
 (1, 2, 'PROJECT_OWNER');
 
--- 插入文件信息（修复：删除手动指定的file_id，自增自动生成）
+-- Insert file information; fixed by removing manually specified file_id and using auto-increment
 INSERT INTO file_infos (project_id, file_name, file_path, file_type, mime_type, file_size, uploader_id, access_url) VALUES
 (1, 'Optimization_of_plasma.pdf', '/uploads/projects/1/documents/opt_plasma.pdf', 'DOCUMENT', 'application/pdf', 3045120, 2, '/api/files/projects/1/documents/opt_plasma.pdf');
 
--- 插入分析记录
+-- Insert analysis record
 INSERT INTO analysis_records (file_id, status, summary, result_json) VALUES
 (1, 'COMPLETED', 
- '本研究采用大气等离子喷涂（APS）技术在A36低碳钢基底上制备了纳米结构的Al2O3-13%TiO2涂层。通过两水平析因实验设计，获得了最佳的涂层性能。', 
+ 'This study used atmospheric plasma spraying (APS) to prepare nanostructured Al2O3-13%TiO2 coatings on an A36 low-carbon steel substrate. A two-level factorial experiment was used to obtain optimal coating performance.', 
  '[{"paperTitle": "Optimization of plasma spray parameters", "materialComposition": "Al2O3-13wt%TiO2", "tio2Content": 13.0, "sprayProcess": "APS", "powerKw": 35.0, "currentA": 600, "sprayDistanceMm": 100, "powderFeedRateGMin": "3 rpm", "hardnessGpa": 10.36, "wearRate": 0.0023}]'
 );
 
--- 6. 最终验证
-SELECT '✅ 数据库更新成功！' AS '状态信息';
+-- 6. Final verification
+SELECT '✅ Database update completed successfully!' AS 'Status information';

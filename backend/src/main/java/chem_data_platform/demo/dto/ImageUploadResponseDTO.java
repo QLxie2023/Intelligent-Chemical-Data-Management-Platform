@@ -1,7 +1,7 @@
 package chem_data_platform.demo.dto;
 
 /**
- * 图片上传响应 DTO
+ * Image upload response DTO
  */
 public class ImageUploadResponseDTO {
 
@@ -10,11 +10,11 @@ public class ImageUploadResponseDTO {
     private String imageUrl;
     private String uploadTimestamp;
 
-    // 新增：分析结果关联
+    // Added: analysis result association
     private Long analysisId;
     private String analysisSummary;
 
-    // 构造器
+    // Constructor
     public ImageUploadResponseDTO() {
     }
 
@@ -25,7 +25,7 @@ public class ImageUploadResponseDTO {
         this.uploadTimestamp = uploadTimestamp;
     }
 
-    // 可选构造器，包含分析字段
+    // Optional constructor including analysis fields
     public ImageUploadResponseDTO(Long imageId, String imageName, String imageUrl, String uploadTimestamp, Long analysisId, String analysisSummary) {
         this.imageId = imageId;
         this.imageName = imageName;

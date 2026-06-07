@@ -1,7 +1,7 @@
 package chem_data_platform.demo.dto;
 
 /**
- * 文件上传响应 DTO
+ * File upload response DTO
  */
 public class FileUploadResponseDTO {
 

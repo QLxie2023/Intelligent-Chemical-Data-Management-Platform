@@ -27,7 +27,7 @@ public class ProjectController {
     private JwtUtil jwtUtil;
 
     /**
-     * 创建新项目
+     * Create a new project
      * POST /api/v1/projects
      */
     @PostMapping
@@ -39,22 +39,22 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
-            // 创建项目
+            // Create project
             ProjectResponseDTO project = projectService.createProject(dto, username);
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("项目创建成功！", project));
+                    .body(ApiResponse.success("Project created successfully!", project));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity
@@ -63,12 +63,12 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("项目创建失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Project creation failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取项目列表
+     * Get project list
      * GET /api/v1/projects
      */
     @GetMapping
@@ -78,17 +78,17 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
-            // 获取用户项目列表（包含用户所有者的项目和所有公开项目）
+            // Get the user's project list, including owned projects and all public projects
             List<ProjectResponseDTO> projects = projectService.getUserProjects(username);
 
             return ResponseEntity
@@ -98,12 +98,12 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取项目列表失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to get project list: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取用户所有者的私有项目列表
+     * Get private projects owned by the user
      * GET /api/v1/projects/private
      */
     @GetMapping("/private")
@@ -113,13 +113,13 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -127,15 +127,15 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("用户私有项目列表", projects));
+                    .body(ApiResponse.success("User private project list", projects));
 
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取私有项目列表失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to get private project list: " + e.getMessage()));
         }
     }    /**
-     * 搜索项目
+     * Search projects
      * GET /api/v1/projects/search
      */
     @GetMapping("/search")
@@ -146,13 +146,13 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -160,7 +160,7 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("搜索结果", results));
+                    .body(ApiResponse.success("Search results", results));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity
@@ -169,12 +169,12 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("搜索项目失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Project search failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取所有公开项目列表
+     * Get all public projects
      * GET /api/v1/projects/public
      */
     @GetMapping("/public")
@@ -184,17 +184,17 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("所有公开项目列表", projects));
+                    .body(ApiResponse.success("All public project list", projects));
 
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取公开项目列表失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to get public project list: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取项目详情
+     * Get project details
      * GET /api/v1/projects/{projectId}
      */
     @GetMapping("/{projectId}")
@@ -205,13 +205,13 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -219,7 +219,7 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("项目详情", project));
+                    .body(ApiResponse.success("Project details", project));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity
@@ -228,12 +228,12 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取项目详情失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to get project details: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取项目文件列表
+     * Get project file list
      * GET /api/v1/projects/{projectId}/files
      */
     @GetMapping("/{projectId}/files")
@@ -244,13 +244,13 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -258,7 +258,7 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("项目文件列表", files));
+                    .body(ApiResponse.success("Project file list", files));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity
@@ -267,12 +267,12 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取项目文件列表失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to get project file list: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取项目图片列表
+     * Get project image list
      * GET /api/v1/projects/{projectId}/images
      */
     @GetMapping("/{projectId}/images")
@@ -283,13 +283,13 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -297,7 +297,7 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("项目图片列表", images));
+                    .body(ApiResponse.success("Project image list", images));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity
@@ -306,14 +306,14 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取项目图片列表失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to get project image list: " + e.getMessage()));
         }
     }
 
     // File/image upload endpoints moved to DataUploadController to avoid duplicate mappings.
 
     /**
-     * 删除项目
+     * Delete project
      * POST /api/v1/projects/{projectId}/delete
      */
     @PostMapping("/{projectId}/delete")
@@ -324,13 +324,13 @@ public class ProjectController {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String token = authHeader.substring(7);
             if (!jwtUtil.isTokenValid(token)) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("未提供有效的认证令牌"));
+                        .body(ApiResponse.unauthorized("Missing a valid authentication token"));
             }
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -338,7 +338,7 @@ public class ProjectController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("项目删除成功！", null));
+                    .body(ApiResponse.success("Project deleted successfully!", null));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity
@@ -347,7 +347,7 @@ public class ProjectController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("项目删除失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Project deletion failed: " + e.getMessage()));
         }
     }
 }

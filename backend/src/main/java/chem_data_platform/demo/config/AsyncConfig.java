@@ -8,27 +8,27 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 
 /**
- * 异步任务执行器配置
- * 用于后台执行文件分析任务（调用 Kimi 或讯飞星火 API）
+ * Async task executor configuration
+ * Used to run file analysis tasks in the background by calling the Qwen API
  */
 @Configuration
 @EnableAsync
 public class AsyncConfig {
 
     /**
-     * 配置异步执行器
-     * - 核心线程池大小：2
-     * - 最大线程数：5
-     * - 队列容量：100
-     * - 线程名前缀：kimi-analysis-
+     * Configure the async executor
+     * - Core pool size: 2
+     * - Maximum pool size: 5
+     * - Queue capacity: 100
+     * - Thread name prefix: qwen-analysis-
      */
     @Bean(name = "asyncExecutor")
     public Executor asyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);                      // 核心线程数
-        executor.setMaxPoolSize(5);                       // 最大线程数
-        executor.setQueueCapacity(100);                   // 任务队列大小
-        executor.setThreadNamePrefix("kimi-analysis-");   // 线程名前缀
+        executor.setCorePoolSize(2);                      // Core thread count
+        executor.setMaxPoolSize(5);                       // Maximum thread count
+        executor.setQueueCapacity(100);                   // Task queue size
+        executor.setThreadNamePrefix("qwen-analysis-");   // Thread name prefix
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
         executor.initialize();

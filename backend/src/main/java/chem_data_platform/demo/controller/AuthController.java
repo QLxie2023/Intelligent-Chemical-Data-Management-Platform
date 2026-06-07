@@ -31,39 +31,39 @@ public class AuthController {
     }
 
     /**
-     * 用户注册接口
-     * 请求参数: username, password, invitationCode
-     * 返回: ApiResponse<Void>
-     * 状态码: 200 成功, 400 参数验证错误/邀请码无效, 409 用户名已存在
+     * User registration API
+     * Request parameters: username, password, invitationCode
+     * Returns: ApiResponse<Void>
+     * Status codes: 200 success, 400 parameter validation error/invalid invitation code, 409 Username already exists
      */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Void>> register(@RequestBody RegisterDTO dto) {
         try {
-            // 验证参数
+            // Validate parameters
             if (dto.getUsername() == null || dto.getUsername().trim().isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.badRequest("用户名不能为空"));
+                        .body(ApiResponse.badRequest("Username cannot be empty"));
             }
             if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.badRequest("密码不能为空"));
+                        .body(ApiResponse.badRequest("Password cannot be empty"));
             }
             if (dto.getInvitationCode() == null || dto.getInvitationCode().trim().isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.badRequest("邀请码不能为空"));
+                        .body(ApiResponse.badRequest("Invitation code cannot be empty"));
             }
 
-            // 检查用户名是否已存在
+            // Check whether the username already exists
             if (userService.findByUsername(dto.getUsername()) != null) {
                 return ResponseEntity
                         .status(HttpStatus.CONFLICT)
-                        .body(ApiResponse.conflict("用户名已存在"));
+                        .body(ApiResponse.conflict("Username already exists"));
             }
 
-            // 创建用户并注册
+            // Create the user and register
             User user = new User();
             user.setUsername(dto.getUsername());
             user.setPassword(dto.getPassword());
@@ -71,57 +71,57 @@ public class AuthController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("注册成功", null));        } catch (IllegalArgumentException e) {
-            // 邀请码无效或已使用
+                    .body(ApiResponse.success("Registration successful", null));        } catch (IllegalArgumentException e) {
+            // Invitation code is invalid or has already been used
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.badRequest(e.getMessage()));
         } catch (RuntimeException e) {
-            // 其他异常
+            // Other exceptions
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("注册失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Registration failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 用户登录接口
-     * 请求参数: username, password
-     * 返回: ApiResponse<LoginResponseDTO> 包含 token 和 user 信息
-     * 状态码: 200 成功, 401 密码错误, 404 用户不存在
+     * User login API
+     * Request parameters: username, password
+     * Returns: ApiResponse<LoginResponseDTO> Includes token and user information
+     * Status codes: 200 success, 401 Incorrect password, 404 User does not exist
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@RequestBody LoginDTO dto) {
         try {
-            // 验证参数
+            // Validate parameters
             if (dto.getUsername() == null || dto.getUsername().trim().isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.badRequest("用户名不能为空"));
+                        .body(ApiResponse.badRequest("Username cannot be empty"));
             }
             if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.badRequest("密码不能为空"));
+                        .body(ApiResponse.badRequest("Password cannot be empty"));
             }
 
-            // 检查用户是否存在
+            // Check whether the user exists
             User user = userService.findByUsername(dto.getUsername());
             if (user == null) {
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("用户不存在"));
+                        .body(ApiResponse.notFound("User does not exist"));
             }
 
-            // 进行身份验证
+            // Authenticate credentials
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword())
             );
 
-            // 生成 token
+            // Generate token
             String token = jwtUtil.generateToken(dto.getUsername());
 
-            // 构建用户信息 DTO
+            // Build user information DTO
             UserInfoDTO userInfo = new UserInfoDTO(
                     user.getId().intValue(),
                     user.getUsername(),
@@ -130,43 +130,43 @@ public class AuthController {
                     user.getRole()
             );
 
-            // 构建登录响应 DTO
+            // Build login response DTO
             LoginResponseDTO loginResponse = new LoginResponseDTO(token, userInfo);
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("登录成功", loginResponse));
+                    .body(ApiResponse.success("Login successful", loginResponse));
         } catch (BadCredentialsException e) {
-            // 密码错误
+            // Incorrect password
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("密码错误"));
+                    .body(ApiResponse.unauthorized("Incorrect password"));
         } catch (RuntimeException e) {
-            // 其他异常（如用户不存在的情况）
+            // Other exceptions, such as when the user does not exist
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.unauthorized("登录失败: " + e.getMessage()));
+                    .body(ApiResponse.unauthorized("Login failed: " + e.getMessage()));
         }
     }
 
     /**
-     * 获取用户信息接口
-     * 请求参数: username (query param)
-     * 返回: ApiResponse<UserInfoDTO> 用户信息
-     * 状态码: 200 成功, 404 用户不存在
+     * Get user information API
+     * Request parameters: username (query param)
+     * Returns: ApiResponse<UserInfoDTO> user information
+     * Status codes: 200 success, 404 User does not exist
      */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserInfoDTO>> getCurrentUser(@RequestParam String username) {
         try {
-            // 查找用户
+            // Find user
             User user = userService.findByUsername(username);
             if (user == null) {
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("用户不存在"));
+                        .body(ApiResponse.notFound("User does not exist"));
             }
 
-            // 构建用户信息 DTO
+            // Build user information DTO
             UserInfoDTO userInfo = new UserInfoDTO(
                     user.getId().intValue(),
                     user.getUsername(),
@@ -177,58 +177,58 @@ public class AuthController {
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("获取用户信息成功", userInfo));
+                    .body(ApiResponse.success("User information retrieved successfully", userInfo));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("获取用户信息失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to retrieve user information: " + e.getMessage()));
         }
     }
 
     /**
-     * 修改密码接口
-     * 请求参数: username (query param), oldPassword, newPassword (body)
-     * 返回: ApiResponse<Void>
-     * 状态码: 200 成功, 400 参数错误, 401 旧密码错误, 404 用户不存在
+     * Change password API
+     * Request parameters: username (query param), oldPassword, newPassword (body)
+     * Returns: ApiResponse<Void>
+     * Status codes: 200 success, 400 parameter error, 401 Old password is incorrect, 404 User does not exist
      */
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(@RequestParam String username, @RequestBody Map<String, String> passwordData) {
         try {
-            // 验证参数
+            // Validate parameters
             if (!passwordData.containsKey("oldPassword") || !passwordData.containsKey("newPassword")) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.badRequest("请提供旧密码和新密码"));
+                        .body(ApiResponse.badRequest("Please provide the old password and new password"));
             }
 
-            // 查找用户
+            // Find user
             User user = userService.findByUsername(username);
             if (user == null) {
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.notFound("用户不存在"));
+                        .body(ApiResponse.notFound("User does not exist"));
             }
 
-            // 验证旧密码
+            // Validate old password
             boolean isPasswordValid = userService.verifyPassword(user, passwordData.get("oldPassword"));
             if (!isPasswordValid) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.unauthorized("旧密码错误"));
+                        .body(ApiResponse.unauthorized("Old password is incorrect"));
             }
 
-            // 更新密码
+            // Update password
             userService.updatePassword(user, passwordData.get("newPassword"));
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(ApiResponse.success("密码修改成功", null));
+                    .body(ApiResponse.success("Password changed successfully", null));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.serverError("修改密码失败: " + e.getMessage()));
+                    .body(ApiResponse.serverError("Failed to change password: " + e.getMessage()));
         }
     }
 }

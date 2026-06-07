@@ -13,9 +13,9 @@ import java.io.*;
 import java.util.*;
 
 /**
- * 数据处理服务
- * 整合 JSON 清洗和 Excel 生成
- * 将 Kimi API 返回的 JSON 转换为 Excel 文件供下载
+ * Data processing service
+ * Integrates JSON cleanup and Excel generation
+ * Convert JSON analysis results into an Excel file for download
  */
 @Service
 public class DataProcessingService {
@@ -24,136 +24,136 @@ public class DataProcessingService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 处理 Kimi 返回的 JSON 并生成 Excel
-     * @param kimiResponse Kimi API 返回的原始 JSON 字符串
-     * @param outputPath Excel 输出文件路径
-     * @return Excel 文件路径
+     * Process JSON analysis results and generate Excel
+     * @param aiResponse Raw JSON analysis result
+     * @param outputPath Excel output file path
+     * @return Excel file path
      */
-    public String processAndGenerateExcel(String kimiResponse, String outputPath) {
+    public String processAndGenerateExcel(String aiResponse, String outputPath) {
         try {
-            log.info("开始处理 JSON 并生成 Excel");
+            log.info("Start processing JSON and generating Excel");
             
-            // 步骤1: 清洗和解析 JSON
-            Map<String, Object> parsedData = parseKimiResponse(kimiResponse);
+            // Step 1: clean and parse JSON
+            Map<String, Object> parsedData = parseAnalysisResponse(aiResponse);
             
-            // 步骤2: 生成 Excel
+            // Step 2: generate Excel
             String excelPath = generateExcelFromData(parsedData, outputPath);
-            log.info("Excel 生成成功: {}", excelPath);
+            log.info("Excel generated successfully: {}", excelPath);
             return excelPath;
 
         } catch (Exception e) {
-            log.error("数据处理失败，使用兜底数据: {}", e.getMessage(), e);
-            // 兜底方案：返回 Mock 数据生成的 Excel
+            log.error("Data processing failed; using fallback data: {}", e.getMessage(), e);
+            // Fallback strategy: generate Excel from mock data
             return generateMockExcel(outputPath);
         }
     }
 
     /**
-     * 解析 Kimi API 响应
-     * @param kimiResponse 原始 JSON 响应
-     * @return 解析后的数据 Map
+     * Parse AI analysis response
+     * @param aiResponse Raw JSON response
+     * @return Parsed data map
      */
-    private Map<String, Object> parseKimiResponse(String kimiResponse) throws Exception {
+    private Map<String, Object> parseAnalysisResponse(String aiResponse) throws Exception {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            JsonNode root = objectMapper.readTree(kimiResponse);
+            JsonNode root = objectMapper.readTree(aiResponse);
             
-            // 提取摘要
-            String summary = root.has("summary") ? root.get("summary").asText() : "暂无摘要";
+            // Extract summary
+            String summary = root.has("summary") ? root.get("summary").asText() : "No summary available";
             result.put("summary", summary);
             
-            // 提取化合物数据
+            // Extract compound data
             List<Map<String, String>> compounds = new ArrayList<>();
             if (root.has("compounds") && root.get("compounds").isArray()) {
                 root.get("compounds").forEach(node -> {
                     Map<String, String> compound = new HashMap<>();
-                    compound.put("名称", node.has("name") ? node.get("name").asText() : "");
-                    compound.put("分子式", node.has("formula") ? node.get("formula").asText() : "");
-                    compound.put("CAS号", node.has("cas") ? node.get("cas").asText() : "");
+                    compound.put("Name", node.has("name") ? node.get("name").asText() : "");
+                    compound.put("Molecular Formula", node.has("formula") ? node.get("formula").asText() : "");
+                    compound.put("CAS Number", node.has("cas") ? node.get("cas").asText() : "");
                     compounds.add(compound);
                 });
             }
             result.put("compounds", compounds);
             
-            // 提取实验条件
+            // Extract experimental conditions
             Map<String, String> conditions = new HashMap<>();
             if (root.has("conditions")) {
                 JsonNode condNode = root.get("conditions");
-                conditions.put("温度", condNode.has("temperature") ? condNode.get("temperature").asText() : "N/A");
-                conditions.put("压力", condNode.has("pressure") ? condNode.get("pressure").asText() : "N/A");
-                conditions.put("溶剂", condNode.has("solvent") ? condNode.get("solvent").asText() : "N/A");
+                conditions.put("Temperature", condNode.has("temperature") ? condNode.get("temperature").asText() : "N/A");
+                conditions.put("Pressure", condNode.has("pressure") ? condNode.get("pressure").asText() : "N/A");
+                conditions.put("Solvent", condNode.has("solvent") ? condNode.get("solvent").asText() : "N/A");
             }
             result.put("conditions", conditions);
             
-            // 提取收率数据
+            // Extract yield data
             List<Map<String, String>> yields = new ArrayList<>();
             if (root.has("yields") && root.get("yields").isArray()) {
                 root.get("yields").forEach(node -> {
                     Map<String, String> yieldData = new HashMap<>();
-                    yieldData.put("产物", node.has("product") ? node.get("product").asText() : "");
-                    yieldData.put("收率(%)", node.has("yield_percent") ? node.get("yield_percent").asText() : "");
-                    yieldData.put("单位", node.has("unit") ? node.get("unit").asText() : "");
+                    yieldData.put("Product", node.has("product") ? node.get("product").asText() : "");
+                    yieldData.put("Yield (%)", node.has("yield_percent") ? node.get("yield_percent").asText() : "");
+                    yieldData.put("Unit", node.has("unit") ? node.get("unit").asText() : "");
                     yields.add(yieldData);
                 });
             }
             result.put("yields", yields);
             
-            // 提取其他数据
+            // Extract other data
             if (root.has("other_data")) {
                 result.put("other_data", objectMapper.convertValue(root.get("other_data"), Map.class));
             }
             
-            log.info("JSON 解析成功，提取到化合物数: {}, 收率数: {}", compounds.size(), yields.size());
+            log.info("JSON parsed successfully; compound count: {}, yield count: {}", compounds.size(), yields.size());
             return result;
             
         } catch (Exception e) {
-            log.error("JSON 解析失败: {}", e.getMessage());
-            // 如果 JSON 格式不正确，返回原始数据
+            log.error("JSON parsing failed: {}", e.getMessage());
+            // If the JSON format is invalid, return the raw data
             Map<String, Object> fallback = new HashMap<>();
-            fallback.put("summary", "JSON 解析失败，原始数据如下");
-            fallback.put("raw_data", kimiResponse);
+            fallback.put("summary", "JSON parsing failed. Raw data follows");
+            fallback.put("raw_data", aiResponse);
             return fallback;
         }
     }
 
     /**
-     * 从解析的数据生成 Excel 文件
-     * @param data 解析后的数据
-     * @param outputPath 输出文件路径
-     * @return Excel 文件路径
+     * Generate an Excel file from parsed data
+     * @param data Parsed data
+     * @param outputPath Output file path
+     * @return Excel file path
      */
     private String generateExcelFromData(Map<String, Object> data, String outputPath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         
         try {
-            // 创建样式
+            // Create styles
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
             
-            // 工作表1: 摘要和基本信息
-            Sheet summarySheet = workbook.createSheet("摘要");
+            // Worksheet 1: summary and basic information
+            Sheet summarySheet = workbook.createSheet("Summary");
             createSummarySheet(summarySheet, data, headerStyle, dataStyle);
             
-            // 工作表2: 化合物数据
+            // Worksheet 2: compound data
             if (data.containsKey("compounds")) {
-                Sheet compoundsSheet = workbook.createSheet("化合物");
+                Sheet compoundsSheet = workbook.createSheet("Compounds");
                 createCompoundsSheet(compoundsSheet, (List<Map<String, String>>) data.get("compounds"), headerStyle, dataStyle);
             }
             
-            // 工作表3: 实验条件
+            // Worksheet 3: experimental conditions
             if (data.containsKey("conditions")) {
-                Sheet conditionsSheet = workbook.createSheet("实验条件");
+                Sheet conditionsSheet = workbook.createSheet("Experimental Conditions");
                 createConditionsSheet(conditionsSheet, (Map<String, String>) data.get("conditions"), headerStyle, dataStyle);
             }
             
-            // 工作表4: 收率数据
+            // Worksheet 4: yield data
             if (data.containsKey("yields")) {
-                Sheet yieldsSheet = workbook.createSheet("收率数据");
+                Sheet yieldsSheet = workbook.createSheet("Yield Data");
                 createYieldsSheet(yieldsSheet, (List<Map<String, String>>) data.get("yields"), headerStyle, dataStyle);
             }
             
-            // 写入文件
+            // Write file
             File outputFile = new File(outputPath);
             outputFile.getParentFile().mkdirs();
             
@@ -161,7 +161,7 @@ public class DataProcessingService {
                 workbook.write(fos);
             }
             
-            log.info("Excel 文件已生成: {}", outputPath);
+            log.info("Excel file generated: {}", outputPath);
             return outputPath;
             
         } finally {
@@ -170,43 +170,43 @@ public class DataProcessingService {
     }
 
     /**
-     * 创建摘要工作表
+     * Create summary worksheet
      */
     private void createSummarySheet(Sheet sheet, Map<String, Object> data, CellStyle headerStyle, CellStyle dataStyle) {
         int rowNum = 0;
         
-        // 标题
+        // Title
         Row titleRow = sheet.createRow(rowNum++);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("文献分析摘要");
+        titleCell.setCellValue("Literature Analysis Summary");
         titleCell.setCellStyle(headerStyle);
         titleRow.setHeightInPoints(25);
         
-        // 摘要内容
+        // Summary content
         rowNum++;
         Row summaryLabelRow = sheet.createRow(rowNum++);
-        summaryLabelRow.createCell(0).setCellValue("摘要内容");
+        summaryLabelRow.createCell(0).setCellValue("Summary content");
         summaryLabelRow.getCell(0).setCellStyle(headerStyle);
         
         Row summaryRow = sheet.createRow(rowNum++);
         Cell summaryCell = summaryRow.createCell(0);
-        summaryCell.setCellValue(data.getOrDefault("summary", "暂无摘要").toString());
+        summaryCell.setCellValue(data.getOrDefault("summary", "No summary available").toString());
         summaryCell.setCellStyle(dataStyle);
         sheet.setColumnWidth(0, 6000);
     }
 
     /**
-     * 创建化合物数据工作表
+     * Create compound data worksheet
      */
     private void createCompoundsSheet(Sheet sheet, List<Map<String, String>> compounds, CellStyle headerStyle, CellStyle dataStyle) {
         if (compounds == null || compounds.isEmpty()) {
-            sheet.createRow(0).createCell(0).setCellValue("暂无化合物数据");
+            sheet.createRow(0).createCell(0).setCellValue("No compound data available");
             return;
         }
         
-        // 表头
+        // Header row
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"名称", "分子式", "CAS号"};
+        String[] headers = {"Name", "Molecular Formula", "CAS Number"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -214,13 +214,13 @@ public class DataProcessingService {
             sheet.setColumnWidth(i, 3000);
         }
         
-        // 数据行
+        // Data row
         int rowNum = 1;
         for (Map<String, String> compound : compounds) {
             Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(compound.getOrDefault("名称", ""));
-            row.createCell(1).setCellValue(compound.getOrDefault("分子式", ""));
-            row.createCell(2).setCellValue(compound.getOrDefault("CAS号", ""));
+            row.createCell(0).setCellValue(compound.getOrDefault("Name", ""));
+            row.createCell(1).setCellValue(compound.getOrDefault("Molecular Formula", ""));
+            row.createCell(2).setCellValue(compound.getOrDefault("CAS Number", ""));
             for (int i = 0; i < headers.length; i++) {
                 row.getCell(i).setCellStyle(dataStyle);
             }
@@ -228,19 +228,19 @@ public class DataProcessingService {
     }
 
     /**
-     * 创建实验条件工作表
+     * Create experimental conditions worksheet
      */
     private void createConditionsSheet(Sheet sheet, Map<String, String> conditions, CellStyle headerStyle, CellStyle dataStyle) {
-        // 表头
+        // Header row
         Row headerRow = sheet.createRow(0);
-        headerRow.createCell(0).setCellValue("条件类型");
-        headerRow.createCell(1).setCellValue("数值");
+        headerRow.createCell(0).setCellValue("Condition Type");
+        headerRow.createCell(1).setCellValue("Value");
         headerRow.getCell(0).setCellStyle(headerStyle);
         headerRow.getCell(1).setCellStyle(headerStyle);
         sheet.setColumnWidth(0, 2000);
         sheet.setColumnWidth(1, 4000);
         
-        // 数据行
+        // Data row
         int rowNum = 1;
         for (Map.Entry<String, String> entry : conditions.entrySet()) {
             Row row = sheet.createRow(rowNum++);
@@ -252,17 +252,17 @@ public class DataProcessingService {
     }
 
     /**
-     * 创建收率数据工作表
+     * Create yield data worksheet
      */
     private void createYieldsSheet(Sheet sheet, List<Map<String, String>> yields, CellStyle headerStyle, CellStyle dataStyle) {
         if (yields == null || yields.isEmpty()) {
-            sheet.createRow(0).createCell(0).setCellValue("暂无收率数据");
+            sheet.createRow(0).createCell(0).setCellValue("No yield data available");
             return;
         }
         
-        // 表头
+        // Header row
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"产物", "收率(%)", "单位"};
+        String[] headers = {"Product", "Yield (%)", "Unit"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -270,13 +270,13 @@ public class DataProcessingService {
             sheet.setColumnWidth(i, 3000);
         }
         
-        // 数据行
+        // Data row
         int rowNum = 1;
         for (Map<String, String> yield : yields) {
             Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(yield.getOrDefault("产物", ""));
-            row.createCell(1).setCellValue(yield.getOrDefault("收率(%)", ""));
-            row.createCell(2).setCellValue(yield.getOrDefault("单位", ""));
+            row.createCell(0).setCellValue(yield.getOrDefault("Product", ""));
+            row.createCell(1).setCellValue(yield.getOrDefault("Yield (%)", ""));
+            row.createCell(2).setCellValue(yield.getOrDefault("Unit", ""));
             for (int i = 0; i < headers.length; i++) {
                 row.getCell(i).setCellStyle(dataStyle);
             }
@@ -284,7 +284,7 @@ public class DataProcessingService {
     }
 
     /**
-     * 创建表头样式
+     * Create header row style
      */
     private CellStyle createHeaderStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
@@ -304,7 +304,7 @@ public class DataProcessingService {
     }
 
     /**
-     * 创建数据样式
+     * Create data style
      */
     private CellStyle createDataStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
@@ -319,47 +319,47 @@ public class DataProcessingService {
     }
 
     /**
-     * 获取分析摘要
-     * @param kimiResponse Kimi API 返回的原始 JSON 字符串
-     * @return 文献摘要文本
+     * Get analysis summary
+     * @param aiResponse Raw JSON analysis result
+     * @return Literature summary text
      */
-    public String getSummary(String kimiResponse) {
+    public String getSummary(String aiResponse) {
         try {
-            Map<String, Object> data = parseKimiResponse(kimiResponse);
-            return data.getOrDefault("summary", "摘要获取失败").toString();
+            Map<String, Object> data = parseAnalysisResponse(aiResponse);
+            return data.getOrDefault("summary", "Summary retrieval failed").toString();
         } catch (Exception e) {
-            log.error("摘要获取失败: {}", e.getMessage());
-            return "摘要获取失败";
+            log.error("Summary retrieval failed: {}", e.getMessage());
+            return "Summary retrieval failed";
         }
     }
 
     /**
-     * 兜底方案：生成 Mock 数据的 Excel
+     * Fallback strategy: generate Excel from mock data
      */
     private String generateMockExcel(String outputPath) {
         try {
             Map<String, Object> mockData = new HashMap<>();
-            mockData.put("summary", "这是兜底数据示例。由于原始数据解析失败，系统使用示例数据生成此 Excel 文件。");
+            mockData.put("summary", "This is fallback sample data. Because the original data could not be parsed, the system generated this Excel file from sample data.");
             
             List<Map<String, String>> mockCompounds = new ArrayList<>();
             Map<String, String> compound = new HashMap<>();
-            compound.put("名称", "示例化合物");
-            compound.put("分子式", "C6H12O6");
-            compound.put("CAS号", "50-99-7");
+            compound.put("Name", "Sample Compound");
+            compound.put("Molecular Formula", "C6H12O6");
+            compound.put("CAS Number", "50-99-7");
             mockCompounds.add(compound);
             mockData.put("compounds", mockCompounds);
             
             Map<String, String> mockConditions = new HashMap<>();
-            mockConditions.put("温度", "25°C");
-            mockConditions.put("压力", "1 atm");
-            mockConditions.put("溶剂", "水");
+            mockConditions.put("Temperature", "25°C");
+            mockConditions.put("Pressure", "1 atm");
+            mockConditions.put("Solvent", "Water");
             mockData.put("conditions", mockConditions);
             
             List<Map<String, String>> mockYields = new ArrayList<>();
             Map<String, String> yieldData = new HashMap<>();
-            yieldData.put("产物", "产物A");
-            yieldData.put("收率(%)", "85");
-            yieldData.put("单位", "%");
+            yieldData.put("Product", "ProductA");
+            yieldData.put("Yield (%)", "85");
+            yieldData.put("Unit", "%");
             mockYields.add(yieldData);
             mockData.put("yields", mockYields);
             
@@ -367,14 +367,14 @@ public class DataProcessingService {
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
             
-            // 创建摘要表
-            Sheet sheet = workbook.createSheet("示例数据");
+            // Create summary sheet
+            Sheet sheet = workbook.createSheet("Sample Data");
             Row row = sheet.createRow(0);
             Cell cell = row.createCell(0);
-            cell.setCellValue("【兜底数据】Kimi 分析失败，请检查日志");
+            cell.setCellValue("[Fallback Data] AI analysis failed. Please check the logs");
             cell.setCellStyle(headerStyle);
             
-            // 写入文件
+            // Write file
             File outputFile = new File(outputPath);
             outputFile.getParentFile().mkdirs();
             
@@ -383,11 +383,11 @@ public class DataProcessingService {
             }
             workbook.close();
             
-            log.info("兜底 Excel 已生成: {}", outputPath);
+            log.info("Fallback Excel generated: {}", outputPath);
             return outputPath;
             
         } catch (Exception e) {
-            log.error("兜底 Excel 生成失败: {}", e.getMessage());
+            log.error("Fallback Excel generation failed: {}", e.getMessage());
             return null;
         }
     }

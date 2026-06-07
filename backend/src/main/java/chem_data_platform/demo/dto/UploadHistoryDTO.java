@@ -3,7 +3,7 @@ package chem_data_platform.demo.dto;
 import java.time.LocalDateTime;
 
 /**
- * 上传历史记录DTO
+ * Upload history record DTO
  */
 public class UploadHistoryDTO {
     private Long id;

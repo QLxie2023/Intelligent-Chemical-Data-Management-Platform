@@ -3,7 +3,7 @@ package chem_data_platform.demo.dto;
 import java.time.LocalDateTime;
 
 /**
- * 项目详情 DTO
+ * Project details DTO
  */
 public class ProjectDetailDTO {
     private Long projectId;

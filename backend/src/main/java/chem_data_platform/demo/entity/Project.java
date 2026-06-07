@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 项目实体
+ * Project entity
  */
 @Entity
 @Table(name = "projects")
@@ -28,7 +28,7 @@ public class Project {
     private String description;
 
     @Column(name = "visibility", nullable = false, length = 50)
-    private String visibility; // PUBLIC 或 PRIVATE
+    private String visibility; // PUBLIC or PRIVATE
 
     @Column(name = "owner_id", nullable = false)
     private Long ownerId;
@@ -40,7 +40,7 @@ public class Project {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Transient
-    private String ownerUsername;  // 不存储在DB，用于响应给前端
+    private String ownerUsername;  // Not stored in DB; used in responses to the frontend
 
     // Getters and Setters
     public Long getProjectId() {

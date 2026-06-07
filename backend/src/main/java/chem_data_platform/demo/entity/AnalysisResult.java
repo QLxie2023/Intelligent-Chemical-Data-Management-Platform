@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 分析结果实体（最小可用版本）
+ * Analysis result entity（minimum viable version）
  */
 @Entity
 @Table(name = "analysis_results")
@@ -14,19 +14,19 @@ public class AnalysisResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long analysisId;
 
-    // 关联项目
+    // Associated project
     @Column(nullable = false)
     private Long projectId;
 
-    // 可选关联文件或图片中的一个
+    // Optionally associated with either a file or an image
     private Long fileId;
     private Long imageId;
 
-    // 简要摘要（用于快速展示）
+    // Brief summary（used for quick display）
     @Column(nullable = false, length = 1000)
     private String summary;
 
-    // 原始返回或详细数据（TEXT）
+    // Raw response or detailed data (TEXT)
     @Column(columnDefinition = "TEXT")
     private String rawResponse;
 

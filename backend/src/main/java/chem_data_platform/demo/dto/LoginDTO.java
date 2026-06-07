@@ -6,13 +6,13 @@ import lombok.Data;
 @Data
 public class LoginDTO {
 
-    @NotBlank(message = "用户名不能为空")
+    @NotBlank(message = "Username cannot be empty")
     private String username;
 
-    @NotBlank(message = "密码不能为空")
+    @NotBlank(message = "Password cannot be empty")
     private String password;
 
-    // 手动加上这两个 getter，IDEA 立刻不报错了！
+    // Manually add these two getters so IDEA stops reporting errors
     public String getUsername() {
         return username;
     }

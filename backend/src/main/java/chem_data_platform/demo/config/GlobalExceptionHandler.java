@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.stream.Collectors;
 
 /**
- * 全局异常处理器
+ * Global exception handler
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * 处理参数验证异常
+     * Handle parameter validation exceptions
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
@@ -28,16 +28,16 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.badRequest("参数验证失败: " + errorMessage));
+                .body(ApiResponse.badRequest("Parameter validation failed: " + errorMessage));
     }
 
     /**
-     * 处理其他异常
+     * Handle other exceptions
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.serverError("系统异常: " + ex.getMessage()));
+                .body(ApiResponse.serverError("System exception: " + ex.getMessage()));
     }
 }

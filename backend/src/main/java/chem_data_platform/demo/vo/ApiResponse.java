@@ -1,18 +1,18 @@
 package chem_data_platform.demo.vo;
 
 /**
- * 统一响应格式
+ * Unified response format
  */
 public class ApiResponse<T> {
     private int code;
     private String message;
     private T data;
 
-    // 无参构造器
+    // No-argument constructor
     public ApiResponse() {
     }
 
-    // 全参构造器
+    // All-argument constructor
     public ApiResponse(int code, String message, T data) {
         this.code = code;
         this.message = message;
@@ -45,7 +45,7 @@ public class ApiResponse<T> {
     }
 
     /**
-     * 成功响应
+     * Success response
      */
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<T>(200, "Success", data);
@@ -56,7 +56,7 @@ public class ApiResponse<T> {
     }
 
     /**
-     * 失败响应
+     * Failure response
      */
     public static <T> ApiResponse<T> fail(int code, String message) {
         return new ApiResponse<T>(code, message, null);
@@ -66,7 +66,7 @@ public class ApiResponse<T> {
         return new ApiResponse<T>(code, message, data);
     }
 
-    // 常用状态码方法
+    // Common status code methods
     public static <T> ApiResponse<T> badRequest(String message) {
         return fail(400, message);
     }
